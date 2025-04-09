@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 
 // Crear una instancia de axios con la URL base
 const api = axios.create({
-  baseURL: "http://localhost:7777/api",
+  baseURL: "https://eventosia-backend.onrender.com/api",
   headers: {
     "Content-Type": "application/json",
   },
