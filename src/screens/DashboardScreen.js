@@ -22,7 +22,7 @@ export default function DashboardScreen() {
     }
 
     loadEvents()
-  }, [fetchEvents])
+  }, [])
 
   const renderEventCard = ({ item }) => (
     <TouchableOpacity style={styles.eventCard} onPress={() => navigation.navigate("EventDetail", { id: item.id })}>

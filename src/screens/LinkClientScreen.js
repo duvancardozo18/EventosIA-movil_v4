@@ -5,7 +5,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert 
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { EventContext } from "../contexts/EventContext"
 import { colors } from "../styles/colors"
-import { Feather } from "@expo/vector-icons"
+import { Feather } from "@expo/vector-icons";
 
 const LinkClientScreen = () => {
   const navigation = useNavigation()

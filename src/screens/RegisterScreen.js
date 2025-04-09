@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import Icon from "react-native-vector-icons/Feather"
+import { Feather } from '@expo/vector-icons'
 import { userService } from "../services/api"
 import { colors } from "../styles/colors"
 
@@ -56,7 +56,7 @@ export default function RegisterScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color={colors.gray[800]} />
+          <Feather name="arrow-left" size={24} color={colors.gray[800]} />
         </TouchableOpacity>
       </View>
 
@@ -71,7 +71,7 @@ export default function RegisterScreen() {
       <View style={styles.form}>
         <View style={styles.inputContainer}>
           <View style={styles.inputIconContainer}>
-            <Icon name="user" size={20} color={colors.gray[400]} />
+            <Feather name="user" size={20} color={colors.gray[400]} />
           </View>
           <TextInput
             style={styles.input}
@@ -83,7 +83,7 @@ export default function RegisterScreen() {
 
         <View style={styles.inputContainer}>
           <View style={styles.inputIconContainer}>
-            <Icon name="user" size={20} color={colors.gray[400]} />
+            <Feather  name="user" size={20} color={colors.gray[400]} />
           </View>
           <TextInput
             style={styles.input}
@@ -95,7 +95,7 @@ export default function RegisterScreen() {
 
         <View style={styles.inputContainer}>
           <View style={styles.inputIconContainer}>
-            <Icon name="mail" size={20} color={colors.gray[400]} />
+            <Feather con name="mail" size={20} color={colors.gray[400]} />
           </View>
           <TextInput
             style={styles.input}
@@ -109,7 +109,7 @@ export default function RegisterScreen() {
 
         <View style={styles.inputContainer}>
           <View style={styles.inputIconContainer}>
-            <Icon name="lock" size={20} color={colors.gray[400]} />
+            <Feather  name="lock" size={20} color={colors.gray[400]} />
           </View>
           <TextInput
             style={styles.input}
@@ -119,13 +119,13 @@ export default function RegisterScreen() {
             onChangeText={(value) => handleChange("password", value)}
           />
           <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-            <Icon name={showPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
+            <Feather  name={showPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.inputContainer}>
           <View style={styles.inputIconContainer}>
-            <Icon name="lock" size={20} color={colors.gray[400]} />
+            <Feather  name="lock" size={20} color={colors.gray[400]} />
           </View>
           <TextInput
             style={styles.input}
@@ -135,13 +135,13 @@ export default function RegisterScreen() {
             onChangeText={(value) => handleChange("confirmPassword", value)}
           />
           <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-            <Icon name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
+            <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.registerButton} onPress={handleSubmit} disabled={loading}>
           <Text style={styles.registerButtonText}>{loading ? "PROCESANDO..." : "CREAR CUENTA"}</Text>
-          {!loading && <Icon name="arrow-right" size={20} color="white" style={styles.buttonIcon} />}
+          {!loading && <Feather  name="arrow-right" size={20} color="white" style={styles.buttonIcon} />}
         </TouchableOpacity>
       </View>
 
