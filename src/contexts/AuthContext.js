@@ -11,26 +11,23 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // ⏳ Verificar sesión activa desde cookie + email al cargar
   useEffect(() => {
-    // Verificar si hay un token almacenado
-    const loadUserData = async () => {
+    const checkSession = async () => {
       try {
-        const token = await AsyncStorage.getItem("token")
-        const userData = await AsyncStorage.getItem("user")
-
-        if (token && userData) {
-          setUser(JSON.parse(userData))
-        }
+        const res = await authService.getCurrentUser()
+        setUser(res.data.usuario)
       } catch (e) {
-        console.error("Error loading user data:", e)
+        setUser(null)
       } finally {
         setLoading(false)
       }
     }
 
-    loadUserData()
+    checkSession()
   }, [])
 
+  // ✅ Login que guarda cookie Y email
   const login = async (email, password) => {
     try {
       setLoading(true)
@@ -38,24 +35,26 @@ export const AuthProvider = ({ children }) => {
 
       const response = await authService.login({ email, password })
 
-      if (response.data && response.data.token) {
-        await AsyncStorage.setItem("token", response.data.token)
-        await AsyncStorage.setItem("user", JSON.stringify(response.data.user))
-        setUser(response.data.user)
+      if (response.data?.usuario) {
+        await AsyncStorage.setItem("lastEmail", response.data.usuario.email)
+        setUser(response.data.usuario)
         return true
       }
+
+      return false
     } catch (err) {
-      setError(err.response?.data?.message || "Error al iniciar sesión")
+      setError(err.response?.data?.error || "Error al iniciar sesión")
       return false
     } finally {
       setLoading(false)
     }
   }
 
+  // ✅ Logout que limpia estado y storage
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem("token")
-      await AsyncStorage.removeItem("user")
+      await authService.logout()
+      await AsyncStorage.removeItem("lastEmail")
       setUser(null)
     } catch (e) {
       console.error("Error during logout:", e)
@@ -69,7 +68,7 @@ export const AuthProvider = ({ children }) => {
       await authService.requestPasswordReset(email)
       return true
     } catch (err) {
-      setError(err.response?.data?.message || "Error al solicitar restablecimiento de contraseña")
+      setError(err.response?.data?.error || "Error al solicitar restablecimiento de contraseña")
       return false
     } finally {
       setLoading(false)
@@ -83,7 +82,7 @@ export const AuthProvider = ({ children }) => {
       await authService.resetPassword({ token, newPassword })
       return true
     } catch (err) {
-      setError(err.response?.data?.message || "Error al restablecer la contraseña")
+      setError(err.response?.data?.error || "Error al restablecer la contraseña")
       return false
     } finally {
       setLoading(false)
@@ -100,6 +99,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         requestPasswordReset,
         resetPassword,
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -108,4 +108,3 @@ export const AuthProvider = ({ children }) => {
 }
 
 export const useAuth = () => useContext(AuthContext)
-

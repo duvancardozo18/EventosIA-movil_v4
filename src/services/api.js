@@ -7,23 +7,24 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // 👈 Esto es CLAVE para que se envíen las cookies
 })
 
 // Interceptor para agregar el token a las solicitudes
-api.interceptors.request.use(
-  async (config) => {
-    try {
-      const token = await AsyncStorage.getItem("token")
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-    } catch (e) {
-      console.error("Error getting token:", e)
-    }
-    return config
-  },
-  (error) => Promise.reject(error),
-)
+// api.interceptors.request.use(
+//   async (config) => {
+//     try {
+//       const token = await AsyncStorage.getItem("token")
+//       if (token) {
+//         config.headers.Authorization = `Bearer ${token}`
+//       }
+//     } catch (e) {
+//       console.error("Error getting token:", e)
+//     }
+//     return config
+//   },
+//   (error) => Promise.reject(error),
+// )
 
 // Servicios de autenticación
 export const authService = {
@@ -31,6 +32,11 @@ export const authService = {
   requestPasswordReset: (email) => api.post("/request-password-reset", { email }),
   resetPassword: (data) => api.post("/reset-password", data),
   verifyEmail: (token) => api.post(`/verify-email/${token}`),
+  getCurrentUser: async () => {
+    const email = await AsyncStorage.getItem("lastEmail")
+    if (!email) throw new Error("No hay email almacenado")
+    return api.get(`/users/${email}`)
+  }  
 }
 
 // Servicios de usuarios
@@ -130,8 +136,24 @@ export const participantService = {
 
 // Servicios de tipos de evento
 export const eventTypeService = {
-  getEventTypes: () => api.get("/event-types"), // or whatever your endpoint is
-  // Add other event type related methods as needed
+  getEventTypes: () => api.get("/event-types"),
+  getEventType: (id) => api.get(`/event-types/${id}`),
+  createEventType: (data) => api.post("/event-types", data),
+  updateEventType: (id, data) => api.put(`/event-types/${id}`, data),
+  // deleteEventType: (id) => api.delete(`/event-types/${id}`), // opcional
+}
+
+// Servicios de ubicaciones
+export const locationService = {
+  getLocations: () => api.get("/locations"),
+  getLocation: (id) => api.get(`/locations/${id}`),
+  createLocation: (data) => api.post("/locations", data),
+  updateLocation: (id, data) => api.put(`/locations/${id}`, data),
+  // deleteLocation: (id) => api.delete(`/locations/${id}`), // opcional
+}
+
+export const categoryService = {
+  getCategories: () => api.get("/categories"),
 }
 
 export default api
