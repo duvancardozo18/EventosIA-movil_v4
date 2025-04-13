@@ -11,102 +11,59 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // ⏳ Verificar sesión activa desde cookie + email al cargar
-  // useEffect(() => {
-  //   const checkSession = async () => {
-  //     try {
-  //       const res = await authService.getCurrentUser()
-  //       console.log("Respuesta de getCurrentUser:", res); // Agrega este log para ver la respuesta
-  //       setUser(res.data.usuario)
-  //     } catch (e) {
-  //       setUser(null)
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
-
-  //   checkSession()
-  // }, [])
-
   useEffect(() => {
-    const checkSession = async () => {
+    // Verificar si hay un token almacenado
+    const loadUserData = async () => {
       try {
-        // Primero, intentamos recuperar el email del usuario desde AsyncStorage
-        const storedEmail = await AsyncStorage.getItem("lastEmail");
-        if (storedEmail) {
-          console.log("Usuario recuperado de AsyncStorage:", storedEmail);
-          
-          // Si el email está en AsyncStorage, hacemos la solicitud al backend
-          const res = await authService.getCurrentUser();
-          
-          // Si la respuesta es correcta, se establece el usuario
-          setUser(res.data.usuario);
-        } else {
-          // Si no hay email en AsyncStorage, establecemos el usuario como null
-          setUser(null);
+        const token = await AsyncStorage.getItem("token")
+        const userData = await AsyncStorage.getItem("user")
+
+        if (token && userData) {
+          setUser(JSON.parse(userData))
         }
       } catch (e) {
-        console.error("Error al verificar sesión:", e);
-        setUser(null);
+        console.error("Error loading user data:", e)
       } finally {
-        setLoading(false); // Termina el estado de carga
+        setLoading(false)
       }
-    };
-  
-    checkSession(); // Ejecutamos la función de comprobación de sesión
-  }, []);  
+    }
 
-  // ✅ Login que guarda cookie Y email
-  // const login = async (email, password) => {
-  //   try {
-  //     setLoading(true)
-  //     setError(null)
-
-  //     const response = await authService.login({ email, password })
-
-  //     if (response.data?.usuario) {
-  //       await AsyncStorage.setItem("lastEmail", response.data.usuario.email)
-  //       setUser(response.data.usuario)
-  //       return true
-  //     }
-
-  //     return false
-  //   } catch (err) {
-  //     setError(err.response?.data?.error || "Error al iniciar sesión")
-  //     return false
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
+    loadUserData()
+  }, [])
 
   const login = async (email, password) => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
   
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ email, password })
+      //console.log("Login response:", response) 
+      const data = response.data
   
-      if (response.data?.usuario) {
-        // Guardar el email en AsyncStorage para restaurar la sesión
-        await AsyncStorage.setItem("lastEmail", response.data.usuario.email);
-        setUser(response.data.usuario);
-        return true;
+      if (data && data.token && data.usuario) {
+        await AsyncStorage.setItem("token", data.token)
+        await AsyncStorage.setItem("user", JSON.stringify(data.usuario))
+        setUser(data.usuario)
+        return true
+      } else {
+        setError("Respuesta inválida del servidor")
+        return false
       }
   
-      return false;
     } catch (err) {
-      setError(err.response?.data?.error || "Error al iniciar sesión");
-      return false;
+      console.log("Login error:", err)
+      setError(err.response?.data?.error || "Error al iniciar sesión")
+      return false
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };  
+  }
+  
 
-  // ✅ Logout que limpia estado y storage
   const logout = async () => {
     try {
-      await authService.logout()
-      await AsyncStorage.removeItem("lastEmail")
+      await AsyncStorage.removeItem("token")
+      await AsyncStorage.removeItem("user")
       setUser(null)
     } catch (e) {
       console.error("Error during logout:", e)
@@ -120,7 +77,7 @@ export const AuthProvider = ({ children }) => {
       await authService.requestPasswordReset(email)
       return true
     } catch (err) {
-      setError(err.response?.data?.error || "Error al solicitar restablecimiento de contraseña")
+      setError(err.response?.data?.message || "Error al solicitar restablecimiento de contraseña")
       return false
     } finally {
       setLoading(false)
@@ -134,7 +91,7 @@ export const AuthProvider = ({ children }) => {
       await authService.resetPassword({ token, newPassword })
       return true
     } catch (err) {
-      setError(err.response?.data?.error || "Error al restablecer la contraseña")
+      setError(err.response?.data?.message || "Error al restablecer la contraseña")
       return false
     } finally {
       setLoading(false)
@@ -151,7 +108,6 @@ export const AuthProvider = ({ children }) => {
         logout,
         requestPasswordReset,
         resetPassword,
-        isAuthenticated: !!user,
       }}
     >
       {children}
