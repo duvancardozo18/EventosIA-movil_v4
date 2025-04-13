@@ -1,486 +1,341 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from "react-native"
-import { useNavigation } from "@react-navigation/native"
-import Icon from "react-native-vector-icons/Feather"
-import * as ImagePicker from "expo-image-picker"
-import { Picker } from "@react-native-picker/picker"
-import DateTimePicker from "@react-native-community/datetimepicker"
-import { useEvent } from "../../../../contexts/EventContext"
-import { useLocation } from "../../../../contexts/LocationContext"
-import { useAuth } from "../../../../contexts/AuthContext"
-import { eventTypeService } from "../../../../services/api"
-import { colors } from "../../../../styles/colors"
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import Icon from "react-native-vector-icons/Feather";
+import * as ImagePicker from "expo-image-picker";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../../../contexts/AuthContext";
+import { useEvent } from "../../../../contexts/EventContext";
+import { useLocation } from "../../../../contexts/LocationContext";
+import { useEventType } from "../../../../contexts/EventTypeContext";
+import LocationForm from "./createevent/LocationForm";
+import TypeEventForm from "./createevent/TypeEventForm";
+import { colors } from "../../../../styles/colors";
 
 export default function CreateEventScreen() {
-  const navigation = useNavigation()
-  const { createEvent, loading, error } = useEvent()
-  const { fetchLocations, locations } = useLocation()
-  const { user } = useAuth()
-  const [eventTypes, setEventTypes] = useState([])
-  const [formData, setFormData] = useState({
+  const { user } = useAuth(); // Obtiene el usuario actual
+  const { createEvent, loading, error } = useEvent();
+  const navigation = useNavigation();
+
+
+  const { createLocation } = useLocation();  // Usamos el contexto para crear la ubicación
+  const { createEventType } = useEventType();  // Usamos el contexto para crear el tipo de evento
+  const [locationData, setLocationData] = useState(null);
+  const [typeEventData, setTypeEventData] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const [showLocationForm, setShowLocationForm] = useState(false);
+  const [showTypeForm, setShowTypeForm] = useState(false);
+
+  // Datos iniciales para el evento
+  const [eventFormData, setEventFormData] = useState({
     name: "",
-    description: "",
-    event_state_id: 1, // Por defecto, estado "Planificado"
-    type_of_event_id: "",
-    location_id: "",
-    user_id_created_by: "",
+    event_state_id: 1,
     image: null,
-    video_conference_link: "",
-    max_participants: "",
-    price: "",
-    start_time: new Date(),
-    end_time: new Date(),
-  })
-  const [loadingEventTypes, setLoadingEventTypes] = useState(false)
-  const [imagePreview, setImagePreview] = useState(null)
-  const [showStartDate, setShowStartDate] = useState(false)
-  const [showStartTime, setShowStartTime] = useState(false)
-  const [showEndDate, setShowEndDate] = useState(false)
-  const [showEndTime, setShowEndTime] = useState(false)
+    user_id_created_by: user?.id_user || null, // Usando el ID del usuario actual
+    type_of_event_id: null,  // Este campo será llenado más tarde con el ID del tipo de evento
+    location_id: null,  // Este campo será llenado más tarde con el ID de la ubicación
+  });
 
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchLocations()
-
-      setLoadingEventTypes(true)
-      try {
-        const response = await eventTypeService.getEventTypes()
-        setEventTypes(response.data || [])
-      } catch (error) {
-        console.error("Error al cargar tipos de evento:", error)
-      } finally {
-        setLoadingEventTypes(false)
-      }
-
-      // Establecer el ID del usuario actual como creador
-      if (user && user.id) {
-        setFormData((prev) => ({
-          ...prev,
-          user_id_created_by: user.id,
-        }))
-      }
-    }
-
-    loadData()
-  }, [fetchLocations, user])
-
-  const handleChange = (name, value) => {
-    setFormData((prev) => ({
+  const handleChange = (field, value) => {
+    setEventFormData((prev) => ({
       ...prev,
-      [name]: value,
-    }))
-  }
+      [field]: value,
+    }));
+    console.log(`Updated ${field}:`, value);  // Esto te ayudará a ver qué se actualiza.
+  };
+
+  // Asignamos el user_id_created_by al formData cuando el usuario esté disponible
+  useEffect(() => {
+    if (user) {
+      setEventFormData((prevData) => ({
+        ...prevData,
+        user_id_created_by: user.id_user,  // Asignamos el ID del usuario al formData
+      }));
+    } else {
+      console.log("No se ha cargado el usuario aún.");
+    }
+  }, [user]);  // Dependemos de la variable `user`, que cambiará cuando el usuario se cargue
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
     if (status !== "granted") {
-      alert("Se necesitan permisos para acceder a la galería")
-      return
+      alert("Permiso requerido para acceder a la galería");
+      return;
     }
-
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-    })
-
-    if (!result.cancelled && result.assets && result.assets.length > 0) {
-      const selectedImage = result.assets[0]
-      setFormData((prev) => ({
+    });
+  
+    if (!result.canceled && result.assets.length > 0) {
+      const selectedImage = result.assets[0];
+  
+      setEventFormData((prev) => ({
         ...prev,
         image: selectedImage,
-      }))
-      setImagePreview(selectedImage.uri)
+      }));
+      setImagePreview(selectedImage.uri);  // Asignar la URI de la imagen seleccionada para previsualización
     }
-  }
+  };  
+  const handleCancel = () => {
+    setEventFormData({
+      name: "",
+      event_state_id: 1,
+      image: null,
+      user_id_created_by: user?.id_user || null,
+      type_of_event_id: null,
+      location_id: null,
+    });
+    setLocationData(null);
+    setTypeEventData(null);
+    setImagePreview(null);
+    navigation.goBack(); // Regresar a la pantalla anterior
+  };
 
-  const handleDateChange = (event, selectedDate, type) => {
-    if (selectedDate) {
-      if (type === "startDate") {
-        const currentStartTime = formData.start_time
-        const newDate = new Date(selectedDate)
-        newDate.setHours(currentStartTime.getHours(), currentStartTime.getMinutes())
-
-        setFormData((prev) => ({
-          ...prev,
-          start_time: newDate,
-        }))
-        setShowStartDate(false)
-      } else if (type === "startTime") {
-        const currentStartDate = formData.start_time
-        const newDate = new Date(currentStartDate)
-        newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
-
-        setFormData((prev) => ({
-          ...prev,
-          start_time: newDate,
-        }))
-        setShowStartTime(false)
-      } else if (type === "endDate") {
-        const currentEndTime = formData.end_time
-        const newDate = new Date(selectedDate)
-        newDate.setHours(currentEndTime.getHours(), currentEndTime.getMinutes())
-
-        setFormData((prev) => ({
-          ...prev,
-          end_time: newDate,
-        }))
-        setShowEndDate(false)
-      } else if (type === "endTime") {
-        const currentEndDate = formData.end_time
-        const newDate = new Date(currentEndDate)
-        newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
-
-        setFormData((prev) => ({
-          ...prev,
-          end_time: newDate,
-        }))
-        setShowEndTime(false)
+  const handleCreateEvent = async () => {
+    try {
+      if (!eventFormData.name || !locationData || !typeEventData ) {
+        console.log("Error, faltan datos:", eventFormData);
+        return;
       }
-    } else {
-      if (type === "startDate") setShowStartDate(false)
-      if (type === "startTime") setShowStartTime(false)
-      if (type === "endDate") setShowEndDate(false)
-      if (type === "endTime") setShowEndTime(false)
-    }
-  }
+  
+      // Crear ubicación usando el contexto
+      const locationResponse = await createLocation(locationData);
+      console.log(locationResponse);
+      const locationId = locationResponse?.id_location;
+  
+      if (!locationId) throw new Error("No se pudo crear la ubicación");
+  
+      // Crear tipo de evento usando el contexto
+      const typeResponse = await createEventType(typeEventData);
+      console.log(typeResponse)
+      const typeId = typeResponse?.id_type_of_event;
+  
+      if (!typeId) throw new Error("No se pudo crear el tipo de evento");
+  
+      // Crear el evento
+      const formData = new FormData();
+      formData.append("name", eventFormData.name);
+      formData.append("event_state_id", eventFormData.event_state_id);
+      formData.append("location_id", locationId);
+      formData.append("type_of_event_id", typeId);
+      formData.append("user_id_created_by", eventFormData.user_id_created_by);
 
-  const handleSubmit = async () => {
-    // Validar campos requeridos
-    if (!formData.name || !formData.user_id_created_by) {
-      alert("Por favor complete los campos requeridos")
-      return
+      if (eventFormData.image) {
+        const uriParts = eventFormData.image.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];  // Extrae la extensión de la imagen (jpeg, png, etc.)
+      
+        formData.append("image", {
+          uri: eventFormData.image.uri, // URI del archivo local
+          type: `image/${fileType}`, // Tipo de archivo (image/png, image/jpeg)
+          name: eventFormData.image.fileName || 'image.png',  // Usar el nombre del archivo real
+        });
+      }      
+  
+      console.log("📦 FormData enviado:", formData);
+  
+      // Enviar el FormData al backend
+      const created = await createEvent(formData);
+      if (created) {
+        navigation.navigate("EventCreated");
+      } else {
+        Alert.alert("Error", "No se pudo crear el evento.");
+      }
+    } catch (err) {
+      console.error("Error al crear el evento:", err);
+      Alert.alert("Error", "Ocurrió un error al crear el evento.");
     }
-
-    const success = await createEvent(formData)
-    if (success) {
-      navigation.navigate("EventCreated")
-    }
-  }
+  };  
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
-          <Icon name="arrow-left" size={24} color={colors.gray[800]} />
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Crear Evento</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Nombre del evento"
+        value={eventFormData.name}
+        onChangeText={(text) => handleChange("name", text)}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Descripción"
+        value={eventFormData.description}
+        onChangeText={(text) => handleChange("description", text)}
+      />
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Imagen</Text>
+
+        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+          <Text style={styles.imagePickerText}>
+            {eventFormData.image
+              ? eventFormData.image.fileName || "Imagen seleccionada"
+              : "Seleccionar imagen"}
+          </Text>
+          <Icon name="upload" size={20} color={colors.gray[500]} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crear evento</Text>
+
+        {imagePreview && (
+          <Image source={{ uri: imagePreview }} style={styles.imagePreview} />
+        )}
       </View>
 
-      <ScrollView style={styles.content}>
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+      {/* Acordeones */}
+      <TouchableOpacity
+        style={styles.accordionHeader}
+        onPress={() => setShowTypeForm(!showTypeForm)}
+      >
+        <Text style={styles.accordionTitle}>Tipo de evento</Text>
+        <Icon name={showTypeForm ? "chevron-up" : "chevron-down"} size={20} color={colors.gray[700]} />
+      </TouchableOpacity>
+      {showTypeForm && (
+        <TypeEventForm onChange={(data) => setTypeEventData(data)} formData={typeEventData} />
+      )}
 
-        <View style={styles.form}>
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Nombre del evento *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.name}
-              onChangeText={(value) => handleChange("name", value)}
-              placeholder="Nombre del evento"
-            />
-          </View>
+      <TouchableOpacity
+        style={styles.accordionHeader}
+        onPress={() => setShowLocationForm(!showLocationForm)}
+      >
+        <Text style={styles.accordionTitle}>Ubicación</Text>
+        <Icon name={showLocationForm ? "chevron-up" : "chevron-down"} size={20} color={colors.gray[700]} />
+      </TouchableOpacity>
+      {showLocationForm && (
+        <LocationForm onChange={(data) => setLocationData(data)} />
+      )}
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Descripción</Text>
-            <TextInput
-              style={styles.textArea}
-              value={formData.description}
-              onChangeText={(value) => handleChange("description", value)}
-              placeholder="Descripción del evento"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
+      <TouchableOpacity
+        style={styles.submitButton}
+        onPress={handleCreateEvent}
+        disabled={loading}
+      >
+        <Text style={styles.submitButtonText}>
+          {loading ? "Creando evento..." : "Crear evento"}
+        </Text>
+      </TouchableOpacity>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Imagen</Text>
-            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-              <Text style={styles.imagePickerText}>
-                {formData.image ? formData.image.fileName || "Imagen seleccionada" : "Seleccionar imagen"}
-              </Text>
-              <Icon name="upload" size={20} color={colors.gray[500]} />
-            </TouchableOpacity>
-            {imagePreview && <Image source={{ uri: imagePreview }} style={styles.imagePreview} />}
-          </View>
+      <TouchableOpacity onPress={handleCancel}>
+        <Text style={{ color: "red" }}>Cancelar</Text>
+      </TouchableOpacity>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Tipo de evento</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.type_of_event_id}
-                onValueChange={(value) => handleChange("type_of_event_id", value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Seleccionar tipo de evento" value="" />
-                {loadingEventTypes ? (
-                  <Picker.Item label="Cargando tipos de evento..." value="" enabled={false} />
-                ) : (
-                  eventTypes.map((type) => <Picker.Item key={type.id} label={type.event_type} value={type.id} />)
-                )}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Ubicación</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.location_id}
-                onValueChange={(value) => handleChange("location_id", value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Seleccionar ubicación" value="" />
-                {locations.map((location) => (
-                  <Picker.Item key={location.id} label={location.name} value={location.id} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Enlace del meet</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.video_conference_link}
-              onChangeText={(value) => handleChange("video_conference_link", value)}
-              placeholder="Enlace de videoconferencia"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.sectionTitle}>Fecha y hora</Text>
-
-            <View style={styles.dateTimeRow}>
-              <Text style={styles.dateTimeLabel}>Inicio</Text>
-              <TouchableOpacity style={styles.dateInput} onPress={() => setShowStartDate(true)}>
-                <Text>{formData.start_time.toLocaleDateString()}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.timeInput} onPress={() => setShowStartTime(true)}>
-                <Text>{formData.start_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.dateTimeRow}>
-              <Text style={styles.dateTimeLabel}>Fin</Text>
-              <TouchableOpacity style={styles.dateInput} onPress={() => setShowEndDate(true)}>
-                <Text>{formData.end_time.toLocaleDateString()}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.timeInput} onPress={() => setShowEndTime(true)}>
-                <Text>{formData.end_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {showStartDate && (
-              <DateTimePicker
-                value={formData.start_time}
-                mode="date"
-                display="default"
-                onChange={(event, date) => handleDateChange(event, date, "startDate")}
-              />
-            )}
-            {showStartTime && (
-              <DateTimePicker
-                value={formData.start_time}
-                mode="time"
-                display="default"
-                onChange={(event, date) => handleDateChange(event, date, "startTime")}
-              />
-            )}
-            {showEndDate && (
-              <DateTimePicker
-                value={formData.end_time}
-                mode="date"
-                display="default"
-                onChange={(event, date) => handleDateChange(event, date, "endDate")}
-              />
-            )}
-            {showEndTime && (
-              <DateTimePicker
-                value={formData.end_time}
-                mode="time"
-                display="default"
-                onChange={(event, date) => handleDateChange(event, date, "endTime")}
-              />
-            )}
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Número máximo de participantes</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.max_participants}
-              onChangeText={(value) => handleChange("max_participants", value)}
-              placeholder="Número máximo de participantes"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Precio del evento</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.price}
-              onChangeText={(value) => handleChange("price", value)}
-              placeholder="Precio del evento"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
-            <Text style={styles.submitButtonText}>{loading ? "CREANDO EVENTO..." : "CREAR EVENTO"}</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
-  )
+      {error && <Text style={styles.error}>{error}</Text>}
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 16,
     backgroundColor: "white",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    marginLeft: 16,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  errorContainer: {
-    backgroundColor: colors.red[100],
-    borderWidth: 1,
-    borderColor: colors.red[400],
-    padding: 12,
-    borderRadius: 6,
     marginBottom: 16,
   },
-  errorText: {
-    color: colors.red[700],
+  input: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 12,
   },
-  form: {
-    marginBottom: 24,
+  imageButton: {
+    backgroundColor: colors.indigo[500],
+    padding: 12,
+    borderRadius: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
+  imageButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 180,
+    borderRadius: 6,
+    marginBottom: 12,
+  },
+  accordionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    backgroundColor: colors.gray[100],
+    marginBottom: 8,
+  },
+  accordionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.gray[800],
+  },
+  submitButton: {
+    backgroundColor: colors.indigo[600],
+    paddingVertical: 14,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  submitButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  error: {
+    color: colors.red[600],
+    marginTop: 8,
+  },
+
   formGroup: {
     marginBottom: 16,
   },
+  
   label: {
     fontSize: 14,
     fontWeight: "500",
     color: colors.gray[700],
     marginBottom: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
+  
   imagePicker: {
     borderWidth: 1,
     borderColor: colors.gray[300],
     borderRadius: 6,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: colors.gray[50],
   },
+  
   imagePickerText: {
-    color: colors.gray[500],
+    color: colors.gray[600],
+    fontSize: 15,
   },
-  imagePreview: {
-    width: "100%",
-    height: 128,
-    borderRadius: 6,
-    marginTop: 8,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-  picker: {
-    height: 50,
-    width: "100%",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    textAlign: "center",
-    marginBottom: 16,
-    color: colors.gray[700],
-  },
-  dateTimeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  dateTimeLabel: {
-    width: 50,
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.gray[700],
-  },
-  dateInput: {
-    flex: 2,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
-  timeInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  submitButton: {
-    backgroundColor: colors.indigo[500],
-    borderRadius: 6,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  submitButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 16,
-  },
+  
+  
 })
-

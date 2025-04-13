@@ -14,7 +14,7 @@ export const LocationProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await resourceService.getLocations();
+      const response = await locationServiceService.getLocations();
       setLocations(response.data);
       return response.data;
     } catch (err) {
@@ -29,7 +29,7 @@ export const LocationProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await resourceService.getLocation(id);  // Using resourceService
+      const response = await locationService.getLocation(id);  // Using resourceService
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || "Error al obtener la ubicación");
@@ -43,7 +43,7 @@ export const LocationProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await resourceService.createLocation(locationData); // Using resourceService
+      const response = await locationService.createLocation(locationData); // Using resourceService
       setLocations([...locations, response.data]);
       return response.data;
     } catch (err) {
@@ -58,7 +58,7 @@ export const LocationProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await resourceService.updateLocation(id, locationData);
+      const response = await locationService.updateLocation(id, locationData);
       setLocations(locations.map(location => 
         location.id === id ? response.data : location
       ));
@@ -76,7 +76,7 @@ export const LocationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       // Use the appropriate service from your available options
-      await resourceService.deleteLocation(id); // or eventService.deleteLocation(id)
+      await locationService.deleteLocation(id); // or eventService.deleteLocation(id)
       setLocations(locations.filter((location) => location.id !== id));
       return true;
     } catch (err) {

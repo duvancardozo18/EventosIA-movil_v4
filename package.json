@@ -20,6 +20,7 @@
     "@types/react": "~18.2.45",
     "axios": "^1.6.7",
     "crypto-browserify": "^3.12.1",
+    "eventosIA-mobile": "file:",
     "expo": "~50.0.6",
     "expo-image-picker": "~14.7.1",
     "expo-linking": "~4.0.0",

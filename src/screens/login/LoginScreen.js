@@ -17,9 +17,12 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     const success = await login(email, password)
     if (success) {
-      navigation.navigate("Dashboard")
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Dashboard" }],
+      })
     }
-  }
+  }  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
