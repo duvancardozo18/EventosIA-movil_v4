@@ -35,22 +35,30 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true)
       setError(null)
-
+  
       const response = await authService.login({ email, password })
-
-      if (response.data && response.data.token) {
-        await AsyncStorage.setItem("token", response.data.token)
-        await AsyncStorage.setItem("user", JSON.stringify(response.data.user))
-        setUser(response.data.user)
+      //console.log("Login response:", response) 
+      const data = response.data
+  
+      if (data && data.token && data.usuario) {
+        await AsyncStorage.setItem("token", data.token)
+        await AsyncStorage.setItem("user", JSON.stringify(data.usuario))
+        setUser(data.usuario)
         return true
+      } else {
+        setError("Respuesta inválida del servidor")
+        return false
       }
+  
     } catch (err) {
-      setError(err.response?.data?.message || "Error al iniciar sesión")
+      console.log("Login error:", err)
+      setError(err.response?.data?.error || "Error al iniciar sesión")
       return false
     } finally {
       setLoading(false)
     }
   }
+  
 
   const logout = async () => {
     try {

@@ -26,6 +26,7 @@ export default function DashboardScreen() {
 
   const renderEventCard = ({ item }) => (
     <TouchableOpacity style={styles.eventCard} onPress={() => navigation.navigate("EventDetail", { id: item.id })}>
+      {/* imagen comentada 
       <View style={[styles.eventImageContainer, { backgroundColor: colors.pink[200] }]}>
         {item.image_url ? (
           <Image source={{ uri: item.image_url }} style={styles.eventImage} resizeMode="cover" />
@@ -34,6 +35,7 @@ export default function DashboardScreen() {
           <Text style={styles.dateTagText}>{new Date(item.created_at).toLocaleDateString()}</Text>
         </View>
       </View>
+      */}
       <View style={styles.eventCardContent}>
         <Text style={styles.eventTitle} numberOfLines={1}>
           {item.name}
