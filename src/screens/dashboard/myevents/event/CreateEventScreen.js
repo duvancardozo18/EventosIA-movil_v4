@@ -1,51 +1,76 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity,
-  Image, ScrollView, StyleSheet, Alert
-} from "react-native"
-import Icon from "react-native-vector-icons/Feather"
-import * as ImagePicker from "expo-image-picker"
-import { useNavigation } from "@react-navigation/native"
-import { useAuth } from "../../../../contexts/AuthContext"
-import { useEvent } from "../../../../contexts/EventContext"
-import { locationService, eventTypeService } from "../../../../services/api"
-import LocationForm from "./createevent/LocationForm"
-import TypeEventForm from "./createevent/TypeEventForm"
-import { colors } from "../../../../styles/colors"
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import ImagePicker from 'react-native-image-crop-picker';
+import Icon from "react-native-vector-icons/Feather";
+import * as ImagePicker from "expo-image-picker";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../../../contexts/AuthContext";
+import { useEvent } from "../../../../contexts/EventContext";
+import { useLocation } from "../../../../contexts/LocationContext";
+import { useEventType } from "../../../../contexts/EventTypeContext";
+import LocationForm from "./createevent/LocationForm";
+import TypeEventForm from "./createevent/TypeEventForm";
+import { colors } from "../../../../styles/colors";
 
 export default function CreateEventScreen() {
-  const { user } = useAuth()
-  const { createEvent, loading, error } = useEvent()
-  const navigation = useNavigation()
+  const { user } = useAuth(); // Obtiene el usuario actual
+  const { createEvent, loading, error } = useEvent();
+  const navigation = useNavigation();
 
-  const [locationData, setLocationData] = useState(null)
-  const [typeEventData, setTypeEventData] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
 
-  const [showLocationForm, setShowLocationForm] = useState(false)
-  const [showTypeForm, setShowTypeForm] = useState(false)
+  const { createLocation } = useLocation();  // Usamos el contexto para crear la ubicación
+  const { createEventType } = useEventType();  // Usamos el contexto para crear el tipo de evento
+  const [locationData, setLocationData] = useState(null);
+  const [typeEventData, setTypeEventData] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
+  const [showLocationForm, setShowLocationForm] = useState(false);
+  const [showTypeForm, setShowTypeForm] = useState(false);
+
+  // Datos iniciales para el evento
   const [eventFormData, setEventFormData] = useState({
     name: "",
-    description: "",
     event_state_id: 1,
     image: null,
-    user_id_created_by: null,
-  })
+    user_id_created_by: user?.id_user || null, // Usando el ID del usuario actual
+    type_of_event_id: null,  // Este campo será llenado más tarde con el ID del tipo de evento
+    location_id: null,  // Este campo será llenado más tarde con el ID de la ubicación
+  });
 
   const handleChange = (field, value) => {
     setEventFormData((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+    console.log(`Updated ${field}:`, value);  // Esto te ayudará a ver qué se actualiza.
+  };
+
+  // Asignamos el user_id_created_by al formData cuando el usuario esté disponible
+  useEffect(() => {
+    if (user) {
+      setEventFormData((prevData) => ({
+        ...prevData,
+        user_id_created_by: user.id_user,  // Asignamos el ID del usuario al formData
+      }));
+    } else {
+      console.log("No se ha cargado el usuario aún.");
+    }
+  }, [user]);  // Dependemos de la variable `user`, que cambiará cuando el usuario se cargue
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      alert("Permiso requerido para acceder a la galería")
-      return
+      alert("Permiso requerido para acceder a la galería");
+      return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -53,84 +78,87 @@ export default function CreateEventScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-    })
+    });
 
     if (!result.canceled && result.assets.length > 0) {
-      const selectedImage = result.assets[0]
+      const selectedImage = result.assets[0];
       setEventFormData((prev) => ({
         ...prev,
         image: selectedImage,
-      }))
-      setImagePreview(selectedImage.uri)
+      }));
+      setImagePreview(selectedImage.uri);
     }
-  }
+  };
+
+  const handleCancel = () => {
+    setEventFormData({
+      name: "",
+      event_state_id: 1,
+      image: null,
+      user_id_created_by: user?.id_user || null,
+      type_of_event_id: null,
+      location_id: null,
+    });
+    setLocationData(null);
+    setTypeEventData(null);
+    setImagePreview(null);
+    navigation.goBack(); // Regresar a la pantalla anterior
+  };
 
   const handleCreateEvent = async () => {
     try {
-      if (!eventFormData.name || !locationData || !typeEventData || !user?.id) {
-        Alert.alert("Error", "Faltan datos requeridos.")
-        return
+      if (!eventFormData.name || !locationData || !typeEventData ) {
+        console.log("Error, faltan datos:", eventFormData);
+        return;
       }
-
-      // 1️⃣ Crear ubicación
-      const locationResponse = await locationService.createLocation(locationData)
-      const locationId = locationResponse?.data?.id
-
-      if (!locationId) throw new Error("No se pudo crear la ubicación")
-
-      // 2️⃣ Crear tipo de evento
-      const typeResponse = await eventTypeService.createEventType(typeEventData)
-      const typeId = typeResponse?.data?.id
-
-      if (!typeId) throw new Error("No se pudo crear el tipo de evento")
-
-      // 3️⃣ Armar FormData para evento principal
-      const formData = new FormData()
-      formData.append("name", eventFormData.name)
-      formData.append("description", eventFormData.description || "")
-      formData.append("event_state_id", eventFormData.event_state_id)
-      formData.append("location_id", locationId)
-      formData.append("type_of_event_id", typeId)
-      formData.append("user_id_created_by", user.id)
+  
+      // Crear ubicación usando el contexto
+      const locationResponse = await createLocation(locationData);
+      console.log(locationResponse);
+      const locationId = locationResponse?.id_location;
+  
+      if (!locationId) throw new Error("No se pudo crear la ubicación");
+  
+      // Crear tipo de evento usando el contexto
+      const typeResponse = await createEventType(typeEventData);
+      console.log(typeResponse)
+      const typeId = typeResponse?.id_type_of_event;
+  
+      if (!typeId) throw new Error("No se pudo crear el tipo de evento");
+  
+      // Crear el evento
+      const formData = new FormData();
+      formData.append("name", eventFormData.name);
+      formData.append("event_state_id", eventFormData.event_state_id);
+      formData.append("location_id", locationId);
+      formData.append("type_of_event_id", typeId);
+      formData.append("user_id_created_by", eventFormData.user_id_created_by);
 
       if (eventFormData.image) {
-        const uriParts = eventFormData.image.uri.split(".")
-        const fileType = uriParts[uriParts.length - 1]
+        const uriParts = eventFormData.image.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];  // Extrae la extensión de la imagen (jpeg, png, etc.)
+      
         formData.append("image", {
-          uri: eventFormData.image.uri,
-          name: `event.${fileType}`,
-          type: `image/${fileType}`,
-        })
-      }
-
-      console.log("📦 locationData:", locationData)
-console.log("📦 typeEventData:", typeEventData)
-console.log("📦 eventFormData:", eventFormData)
-
-console.log("📦 FormData enviado:")
-for (let [key, value] of formData.entries()) {
-  if (value && typeof value === "object" && value.uri) {
-    console.log(`- ${key}: [archivo]`, {
-      uri: value.uri,
-      name: value.name,
-      type: value.type,
-    })
-  } else {
-    console.log(`- ${key}: ${value}`)
-  }
-}
-      const created = await createEvent(formData)
+          uri: eventFormData.image.uri, // URI del archivo local
+          type: `image/${fileType}`, // Tipo de archivo (image/png, image/jpeg)
+          name: eventFormData.image.fileName || 'image.png',  // Usar el nombre del archivo real
+        });
+      }      
+  
+      console.log("📦 FormData enviado:", formData);
+  
+      // Enviar el FormData al backend
+      const created = await createEvent(formData);
       if (created) {
-        navigation.navigate("EventCreated")
+        navigation.navigate("EventCreated");
       } else {
-        Alert.alert("Error", "No se pudo crear el evento.")
+        Alert.alert("Error", "No se pudo crear el evento.");
       }
-
     } catch (err) {
-      console.error("Error al crear el evento:", err)
-      Alert.alert("Error", "Ocurrió un error al crear el evento.")
+      console.error("Error al crear el evento:", err);
+      Alert.alert("Error", "Ocurrió un error al crear el evento.");
     }
-  }
+  };  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -176,7 +204,7 @@ for (let [key, value] of formData.entries()) {
         <Icon name={showTypeForm ? "chevron-up" : "chevron-down"} size={20} color={colors.gray[700]} />
       </TouchableOpacity>
       {showTypeForm && (
-        <TypeEventForm onChange={(data) => setTypeEventData(data)} />
+        <TypeEventForm onChange={(data) => setTypeEventData(data)} formData={typeEventData} />
       )}
 
       <TouchableOpacity
@@ -187,8 +215,7 @@ for (let [key, value] of formData.entries()) {
         <Icon name={showLocationForm ? "chevron-up" : "chevron-down"} size={20} color={colors.gray[700]} />
       </TouchableOpacity>
       {showLocationForm && (
-        <
-        LocationForm onChange={(data) => setLocationData(data)} />
+        <LocationForm onChange={(data) => setLocationData(data)} />
       )}
 
       <TouchableOpacity
@@ -201,9 +228,13 @@ for (let [key, value] of formData.entries()) {
         </Text>
       </TouchableOpacity>
 
+      <TouchableOpacity onPress={handleCancel}>
+        <Text style={{ color: "red" }}>Cancelar</Text>
+      </TouchableOpacity>
+
       {error && <Text style={styles.error}>{error}</Text>}
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -305,5 +336,6 @@ const styles = StyleSheet.create({
     color: colors.gray[600],
     fontSize: 15,
   },
+  
   
 })

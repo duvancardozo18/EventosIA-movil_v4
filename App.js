@@ -11,6 +11,7 @@ import { EventProvider } from "./src/contexts/EventContext";
 import { ResourceProvider } from "./src/contexts/ResourceContext";
 import { FoodProvider } from "./src/contexts/FoodContext";
 import { LocationProvider } from "./src/contexts/LocationContext";
+import { EventTypeProvider } from "./src/contexts/EventTypeContext";
 
 // Screens
 import HomeScreen from "./src/screens/home/HomeScreen";
@@ -63,6 +64,7 @@ export default function App() {
             <ResourceProvider>
               <FoodProvider>
                 <LocationProvider>
+                  <EventTypeProvider>
                   <NavigationContainer>
                   <UserProvider>
                     <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
@@ -106,6 +108,7 @@ export default function App() {
                     </UserProvider>
                   </NavigationContainer>
                   <StatusBar style="auto" />
+                  </EventTypeProvider>
                 </LocationProvider>
               </FoodProvider>
             </ResourceProvider>
