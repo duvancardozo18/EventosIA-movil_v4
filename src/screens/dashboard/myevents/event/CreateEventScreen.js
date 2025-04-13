@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import ImagePicker from 'react-native-image-crop-picker';
 import Icon from "react-native-vector-icons/Feather";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
@@ -68,28 +67,29 @@ export default function CreateEventScreen() {
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
     if (status !== "granted") {
       alert("Permiso requerido para acceder a la galería");
       return;
     }
-
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
+  
     if (!result.canceled && result.assets.length > 0) {
       const selectedImage = result.assets[0];
+  
       setEventFormData((prev) => ({
         ...prev,
         image: selectedImage,
       }));
-      setImagePreview(selectedImage.uri);
+      setImagePreview(selectedImage.uri);  // Asignar la URI de la imagen seleccionada para previsualización
     }
-  };
-
+  };  
   const handleCancel = () => {
     setEventFormData({
       name: "",
