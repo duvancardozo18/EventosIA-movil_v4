@@ -31,4 +31,4 @@ yarn-error.*
 .env*.local
 
 # typescript
-*.tsbuildinfo/node_modules
+*.tsbuildinfo/node_modulesj
