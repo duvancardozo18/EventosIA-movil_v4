@@ -6,26 +6,31 @@ import { API_BASE_URL } from '@env'
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    "Content-Type": "application/json",
+    "Accept": "application/json", // Cambiado de Content-Type
   },
-  withCredentials: true, // 👈 Esto es CLAVE para que se envíen las cookies
-})
+  withCredentials: true,  // ⚠️ Comenta o elimina esta línea
+});
 
-// Interceptor para agregar el token a las solicitudes
-api.interceptors.request.use(
-   async (config) => {
-     try {
-       const token = await AsyncStorage.getItem("token")
-       if (token) {
-         config.headers.Authorization = `Bearer ${token}`
-       }
-     } catch (e) {
-       console.error("Error getting token:", e)
-     }
-     return config
-   },
-   (error) => Promise.reject(error),
-)
+// Interceptor mejorado
+  api.interceptors.request.use(async (config) => {
+    // Debug de la petición
+      console.log(`Preparando petición a ${config.url}`);
+      
+      // Agregar token solo si existe
+      const token = await AsyncStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log("Token JWT agregado a los headers");
+      }
+      
+      // Debug final de los headers
+      console.log("Headers finales:", config.headers);
+      
+      return config;
+    }, (error) => {
+      console.error("Error en interceptor:", error);
+      return Promise.reject(error);
+  });
 
 // Servicios de autenticación
 export const authService = {
@@ -105,41 +110,32 @@ export const userService = {
   export const eventService = {
     getEvents: () => api.get("/events"),
     getEvent: (id) => api.get(`/events/${id}`),
-
-    createEvent: (eventData) => {
-      const formData = new FormData();
-      for (const key in eventData) {
-        if (key === "image" && eventData[key]) {
-          const uriParts = eventData[key].uri.split(".");
-          const fileType = uriParts[uriParts.length - 1];
   
-          formData.append("image", {
-            uri: eventData[key].uri,
-            name: `photo.${fileType}`,
-            type: `image/${fileType}`,
-          });
-        } else {
-          formData.append(key, eventData[key]);
-        }
-      }
-  
+    createEvent: (formData) => {
+      // Debug compatible con React Native
+      console.log("Enviando FormData:", {
+        partsCount: formData._parts.length,
+        hasImage: formData._parts.some(p => p[0] === 'image')
+      });
+      
       return api.post("/events", formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "multipart/form-data"
         },
+        transformRequest: (data) => data
       });
     },
-
+  
     updateEvent: (id, formData) => {
       return api.put(`/events/${id}`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
+          "Content-Type": "multipart/form-data"
+        }
+      });
     },
-
-    deleteEvent: (id) => api.delete(`/events/${id}`),
-  }
+  
+    deleteEvent: (id) => api.delete(`/events/${id}`)
+  };
 
 // Servicios de comida
 export const foodService = {

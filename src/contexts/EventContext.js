@@ -42,20 +42,31 @@ export const EventProvider = ({ children }) => {
     }
   }
 
-  const createEvent = async (eventData) => {
+  const createEvent = async (formData) => {
     try {
-      setLoading(true)
-      setError(null)
-      const response = await eventService.createEvent(eventData)
-      setEvents([...events, response.data])
-      return response.data
+      setLoading(true);
+      setError(null);
+      
+      const response = await eventService.createEvent(formData);
+      
+      if (response.status === 201) {
+        setEvents(prev => [...prev, response.data]);
+        return response.data;
+      }
+      
+      throw new Error(`Respuesta inesperada: ${response.status}`);
     } catch (err) {
-      setError(err.response?.data?.message || "Error al crear el evento")
-      return null
+      const errorMsg = err.response?.data?.message || err.message;
+      setError(errorMsg);
+      console.error("Error en creación de evento:", {
+        status: err.response?.status,
+        data: err.response?.data
+      });
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateEvent = async (id, eventData) => {
     try {
