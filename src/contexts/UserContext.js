@@ -29,7 +29,7 @@ export const UserProvider = ({ children }) => {
       setUser(response.data.usuario)
       await AsyncStorage.setItem("user_profile", JSON.stringify(response.data.usuario))
     } catch (error) {
-      console.error("Error fetching user profile:", error)
+      // console.error("Error fetching user profile:", error)
       setError("No se pudo cargar el perfil del usuario")
       if (error.response && error.response.status === 401) {
         logout()
