@@ -15,8 +15,8 @@ export default function EventCreatedScreen() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Evento Creado</Text>
-        <Text style={styles.subtitle}>Exitosamente</Text>
+        <Text style={styles.title}>Operación Existosa</Text>
+        <Text style={styles.subtitle}>¡Tu evento ha sido creado correctamente!</Text>
 
         <View style={styles.iconContainer}>
           <Icon name="check" size={48} color="white" />
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 32,
     textAlign: "center",
+    paddingBottom: 28,
   },
   iconContainer: {
     width: 96,

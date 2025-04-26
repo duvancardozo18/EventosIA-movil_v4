@@ -1,57 +1,80 @@
-import { useState, useEffect } from "react";
-import * as FileSystem from 'expo-file-system';
-import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../../../../contexts/AuthContext";
-import { useEvent } from "../../../../contexts/EventContext";
-import { useLocation } from "../../../../contexts/LocationContext";
-import { useEventType } from "../../../../contexts/EventTypeContext";
-import LocationForm from "./createevent/LocationForm";
-import TypeEventForm from "./createevent/TypeEventForm";
-import { FormTextInput } from "../../../../components/FormTextInput";
-import { FormAccordion } from "../../../../components/FormAccordion";
-import { FormButton } from "../../../../components/FormButton";
-import { FormImagePicker } from "../../../../components/FormImagePicker";
-import { colors } from "../../../../styles/colors";
+
+"use client"
+
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import Icon from "react-native-vector-icons/Feather"
+import * as ImagePicker from "expo-image-picker"
+import { Picker } from "@react-native-picker/picker"
+import DateTimePicker from "@react-native-community/datetimepicker"
+import { useEvent } from "../../../../contexts/EventContext"
+import { useLocation } from "../../../../contexts/LocationContext"
+import { useAuth } from "../../../../contexts/AuthContext"
+import { eventTypeService } from "../../../../services/api"
+import { colors } from "../../../../styles/colors"
+import { Alert } from 'react-native';
 
 
 export default function CreateEventScreen() {
-  const { user } = useAuth();
-  const { createEvent, loading, error } = useEvent();
-  const navigation = useNavigation();
-  const { createLocation } = useLocation();
-  const { createEventType } = useEventType();
-
-  const [locationData, setLocationData] = useState(null);
-  const [typeEventData, setTypeEventData] = useState(null);
-  const [showLocationForm, setShowLocationForm] = useState(false);
-  const [showTypeForm, setShowTypeForm] = useState(false);
-
-  const [eventFormData, setEventFormData] = useState({
+  const navigation = useNavigation()
+  const { createEvent, loading, error } = useEvent()
+  const { createLocation } = useLocation()
+  const { user } = useAuth()
+  const [eventTypes, setEventTypes] = useState([])
+  const [currentStep, setCurrentStep] = useState(1)
+  const userId = user?.id_user
+  const [formData, setFormData] = useState({
     name: "",
+    description: "",
     event_state_id: 1,
+    type_of_event_id: "",
+    user_id_created_by: userId || "",
     image: null,
-    user_id_created_by: user?.id_user || null,
-    type_of_event_id: null,
-    location_id: null,
-  });
-
-  const handleChange = (field, value) => {
-    setEventFormData(prev => ({ ...prev, [field]: value }));
-  };
+    video_conference_link: "",
+    max_participants: "",
+    price: "",
+    start_time: new Date(),
+    end_time: new Date(),
+    location_name: "",
+    location_address: "",
+    location_description: "",
+    location_rental_price: ""
+  })
+  const [loadingEventTypes, setLoadingEventTypes] = useState(false)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [showStartDate, setShowStartDate] = useState(false)
+  const [showStartTime, setShowStartTime] = useState(false)
+  const [showEndDate, setShowEndDate] = useState(false)
+  const [showEndTime, setShowEndTime] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      setEventFormData(prev => ({ ...prev, user_id_created_by: user.id_user }));
+    const loadData = async () => {
+      if (user && user.id) {
+        setFormData((prev) => ({
+          ...prev,
+          user_id_created_by: user.id,
+        }))
+      }
     }
-  }, [user]);
+
+    loadData()
+  }, [user])
+
+  const handleChange = (name, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+
     if (status !== "granted") {
-      Alert.alert("Permiso requerido", "Necesitas permitir el acceso a la galería");
-      return;
+      alert("Se necesitan permisos para acceder a la galería")
+      return
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -59,172 +82,594 @@ export default function CreateEventScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-    });
+    })
 
-    if (!result.canceled && result.assets.length > 0) {
-      const selectedImage = result.assets[0];
-      setEventFormData(prev => ({ ...prev, image: selectedImage }));
+    if (!result.cancelled && result.assets && result.assets.length > 0) {
+      const selectedImage = result.assets[0]
+      setFormData((prev) => ({
+        ...prev,
+        image: selectedImage,
+      }))
+      setImagePreview(selectedImage.uri)
     }
-  };
+  }
 
-  const handleCancel = () => {
-    setEventFormData({
-      name: "",
-      event_state_id: 1,
-      image: null,
-      user_id_created_by: user?.id_user || null,
-      type_of_event_id: null,
-      location_id: null,
-    });
-    setLocationData(null);
-    setTypeEventData(null);
-    navigation.goBack();
-  };
+  const handleDateChange = (event, selectedDate, type) => {
+    if (selectedDate) {
+      if (type === "startDate") {
+        const currentStartTime = formData.start_time
+        const newDate = new Date(selectedDate)
+        newDate.setHours(currentStartTime.getHours(), currentStartTime.getMinutes())
 
-  const handleCreateEvent = async () => {
+        setFormData((prev) => ({
+          ...prev,
+          start_time: newDate,
+        }))
+        setShowStartDate(false)
+      } else if (type === "startTime") {
+        const currentStartDate = formData.start_time
+        const newDate = new Date(currentStartDate)
+        newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
+
+        setFormData((prev) => ({
+          ...prev,
+          start_time: newDate,
+        }))
+        setShowStartTime(false)
+      } else if (type === "endDate") {
+        const currentEndTime = formData.end_time
+        const newDate = new Date(selectedDate)
+        newDate.setHours(currentEndTime.getHours(), currentEndTime.getMinutes())
+
+        setFormData((prev) => ({
+          ...prev,
+          end_time: newDate,
+        }))
+        setShowEndDate(false)
+      } else if (type === "endTime") {
+        const currentEndDate = formData.end_time
+        const newDate = new Date(currentEndDate)
+        newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
+
+        setFormData((prev) => ({
+          ...prev,
+          end_time: newDate,
+        }))
+        setShowEndTime(false)
+      }
+    } else {
+      if (type === "startDate") setShowStartDate(false)
+      if (type === "startTime") setShowStartTime(false)
+      if (type === "endDate") setShowEndDate(false)
+      if (type === "endTime") setShowEndTime(false)
+    }
+  }
+
+  const handleSubmit = async () => {
     try {
-      console.log("Iniciando creación de evento...");
-      
-      // Validaciones básicas
-      if (!eventFormData.name || !locationData || !typeEventData) {
-        Alert.alert("Error", "Completa todos los campos requeridos");
-        return;
+      console.log("Datos iniciales del formulario:", formData);
+  
+      // 1. Crear la ubicación
+      const locationResponse = await createLocation({
+        name: formData.location_name,
+        address: formData.location_address,
+        description: formData.location_description || "",
+        rental_price: formData.location_rental_price || 0
+      });
+  
+      if (!locationResponse?.id_location) {
+        throw new Error("No se recibió el ID de la ubicación");
       }
   
-      // Crear ubicación y tipo de evento
-      const locationResponse = await createLocation(locationData);
-      const locationId = locationResponse?.id_location;
-      if (!locationId) throw new Error("No se pudo crear la ubicación");
+      const locationId = locationResponse.id_location;
+      console.log("Ubicación creada con ID:", locationId);
   
-      const typeResponse = await createEventType(typeEventData);
-      const typeId = typeResponse?.id_type_of_event;
-      if (!typeId) throw new Error("No se pudo crear el tipo de evento");
-  
-      // Preparar FormData (versión compatible con React Native)
-      const formData = new FormData();
+      // 2. Preparar FormData
+      const eventFormData = new FormData();
       
-      // Campos obligatorios
-      formData.append("name", eventFormData.name);
-      formData.append("event_state_id", eventFormData.event_state_id.toString());
-      formData.append("location_id", locationId.toString());
-      formData.append("type_of_event_id", typeId.toString());
-      formData.append("user_id_created_by", eventFormData.user_id_created_by.toString());
+      // 3. Agregar campos como strings (importante)
+      eventFormData.append('location_id', locationId);
+      eventFormData.append('name', formData.name);
+      eventFormData.append('description', formData.description);
+      eventFormData.append('event_state_id', '1'); // Valor por defecto
+      eventFormData.append('type_of_event_id', formData.type_of_event_id);
+      eventFormData.append('user_id_created_by', String(userId));
+      eventFormData.append('video_conference_link', formData.video_conference_link || '');
+      eventFormData.append('max_participants', formData.max_participants || '0');
+      eventFormData.append('price', formData.price || '0');
+      eventFormData.append('start_time', formData.start_time.toISOString());
+      eventFormData.append('end_time', formData.end_time.toISOString());
   
-      // Campo opcional (imagen)
-      if (eventFormData.image?.uri) {
-        const fileType = eventFormData.image.uri.split('.').pop();
-        formData.append("image", {
-          uri: eventFormData.image.uri,
-          name: eventFormData.image.fileName || `event-img-${Date.now()}.${fileType}`,
-          type: eventFormData.image.type || `image/${fileType}`
+      // 4. Agregar imagen si existe
+      if (formData.image) {
+        eventFormData.append('image', {
+          uri: formData.image.uri,
+          type: formData.image.mimeType || 'image/jpeg',
+          name: formData.image.fileName || `event_${Date.now()}.jpg`
         });
       }
   
-      // Debug alternativo para FormData en React Native
-      console.log("Contenido del FormData:");
-      console.log({
-        name: formData._parts.find(p => p[0] === 'name')[1],
-        location_id: formData._parts.find(p => p[0] === 'location_id')[1],
-        hasImage: formData._parts.some(p => p[0] === 'image')
-      });
   
-      // Enviar al backend
-      console.log("Enviando datos al servidor...");
-      const created = await createEvent(formData);
+      // 6. Enviar al backend
+      const success = await createEvent(eventFormData);
       
-      if (created) {
-        console.log("Evento creado exitosamente:", created);
+      if (success) {
         navigation.navigate("EventCreated");
       } else {
-        Alert.alert("Error", "No se pudo crear el evento");
+        throw new Error("Error al crear el evento");
       }
-    } catch (err) {
-      console.error("Error en creación de evento:", {
-        message: err.message,
-        response: err.response?.data,
-        stack: err.stack
-      });
-      Alert.alert("Error", err.response?.data?.message || err.message);
+    } catch (error) {
+      console.error("Error completo:", error);
+      alert(`Error: ${error.message}`);
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Crear Evento</Text>
+  const nextStep = () => {
+    if (currentStep === 1 && !formData.name) {
+      Alert.alert(
+        "Campo requerido", 
+        "Nombre del evento", 
+        [
+          { text: "OK" } 
+        ]
+      );
+      return;   
+    }
+    setCurrentStep(currentStep + 1)
+  }
 
-      <FormTextInput
-        label="Nombre del evento"
-        placeholder="Ingresa el nombre del evento"
-        value={eventFormData.name}
-        onChangeText={(text) => handleChange("name", text)}
-        required
-      />
+  const prevStep = () => {
+    setCurrentStep(currentStep - 1)
+  }
 
-      <FormTextInput
-        label="Descripción"
-        placeholder="Describe tu evento"
-        value={eventFormData.description}
-        onChangeText={(text) => handleChange("description", text)}
-      />
-
-      <FormImagePicker
-        label="Imagen del evento"
-        imageUri={eventFormData.image?.uri}
-        fileName={eventFormData.image?.fileName}
-        onPress={pickImage}
-        onRemove={() => setEventFormData(prev => ({ ...prev, image: null }))}
-      />
-
-      <FormAccordion
-        title="Tipo de evento"
-        isOpen={showTypeForm}
-        onToggle={() => setShowTypeForm(!showTypeForm)}
-      >
-        <TypeEventForm 
-          onChange={(data) => setTypeEventData(data)} 
-          formData={typeEventData} 
+  const renderStep1 = () => (
+    <>
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Nombre del evento *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.name}
+          onChangeText={(value) => handleChange("name", value)}
+          placeholder="Nombre del evento"
         />
-      </FormAccordion>
+      </View>
 
-      <FormAccordion
-        title="Ubicación"
-        isOpen={showLocationForm}
-        onToggle={() => setShowLocationForm(!showLocationForm)}
-      >
-        <LocationForm onChange={(data) => setLocationData(data)} />
-      </FormAccordion>
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Descripción</Text>
+        <TextInput
+          style={styles.textArea}
+          value={formData.description}
+          onChangeText={(value) => handleChange("description", value)}
+          placeholder="Descripción del evento"
+          multiline
+          numberOfLines={4}
+        />
+      </View>
 
-      <FormButton
-        title="Crear evento"
-        onPress={handleCreateEvent}
-        loading={loading}
-      />
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Imagen</Text>
+        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+          <Text style={styles.imagePickerText}>
+            {formData.image ? formData.image.fileName || "Imagen seleccionada" : "Seleccionar imagen"}
+          </Text>
+          <Icon name="upload" size={20} color={colors.gray[500]} />
+        </TouchableOpacity>
+        {imagePreview && <Image source={{ uri: imagePreview }} style={styles.imagePreview} />}
+      </View>
+    </>
+  )
 
-      <FormButton
-        title="Cancelar"
-        onPress={handleCancel}
-        variant="danger"
-      />
+  const renderStep2 = () => (
+    <>
+    <View style={styles.formGroup}>
+        <Text style={styles.label}>Tipo de evento</Text>
+        <View style={styles.pickerContainer}>
+            <Picker
+                selectedValue={formData.type_of_event_id}
+                onValueChange={(value) => handleChange("type_of_event_id", value)}
+                style={styles.picker}
+            >
+                <Picker.Item label="Seleccionar tipo de evento" value="" />
+                <Picker.Item label="Virtual" value="virtual" />
+                <Picker.Item label="Presencial" value="presencial" />
+                <Picker.Item label="Híbrido" value="hibrido" />
+            </Picker>
+        </View>
+    </View>
 
-      {error && <Text style={styles.error}>{error}</Text>}
-    </ScrollView>
-  );
+    {(formData.type_of_event_id === 'virtual' || formData.type_of_event_id === 'hibrido') && (
+        <View style={styles.formGroup}>
+            <Text style={styles.label}>Enlace del meet</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.video_conference_link}
+              onChangeText={(value) => handleChange("video_conference_link", value)}
+              placeholder="Enlace de videoconferencia"
+            />
+        </View>
+    )}
+
+
+    <View style={styles.formGroup}>
+        <Text style={styles.sectionTitle}>Fecha y hora</Text>
+
+        <View style={styles.dateTimeRow}>
+          <Text style={styles.dateTimeLabel}>Inicio</Text>
+          <TouchableOpacity style={styles.dateInput} onPress={() => setShowStartDate(true)}>
+            <Text>{formData.start_time.toLocaleDateString()}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timeInput} onPress={() => setShowStartTime(true)}>
+            <Text>{formData.start_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.dateTimeRow}>
+          <Text style={styles.dateTimeLabel}>Fin</Text>
+          <TouchableOpacity style={styles.dateInput} onPress={() => setShowEndDate(true)}>
+            <Text>{formData.end_time.toLocaleDateString()}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timeInput} onPress={() => setShowEndTime(true)}>
+            <Text>{formData.end_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {showStartDate && (
+          <DateTimePicker
+            value={formData.start_time}
+            mode="date"
+            display="default"
+            onChange={(event, date) => handleDateChange(event, date, "startDate")}
+          />
+        )}
+        {showStartTime && (
+          <DateTimePicker
+            value={formData.start_time}
+            mode="time"
+            display="default"
+            onChange={(event, date) => handleDateChange(event, date, "startTime")}
+          />
+        )}
+        {showEndDate && (
+          <DateTimePicker
+            value={formData.end_time}
+            mode="date"
+            display="default"
+            onChange={(event, date) => handleDateChange(event, date, "endDate")}
+          />
+        )}
+        {showEndTime && (
+          <DateTimePicker
+            value={formData.end_time}
+            mode="time"
+            display="default"
+            onChange={(event, date) => handleDateChange(event, date, "endTime")}
+          />
+        )}
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Número máximo de participantes</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.max_participants}
+          onChangeText={(value) => handleChange("max_participants", value)}
+          placeholder="Número máximo de participantes"
+          keyboardType="numeric"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Precio del evento</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.price}
+          onChangeText={(value) => handleChange("price", value)}
+          placeholder="Precio del evento"
+          keyboardType="numeric"
+        />
+      </View>
+    </>
+  )
+
+  const renderStep3 = () => (
+    <>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Nombre del lugar *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.location_name}
+          onChangeText={(value) => handleChange("location_name", value)}
+          placeholder="Nombre del lugar o establecimiento"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Dirección *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.location_address}
+          onChangeText={(value) => handleChange("location_address", value)}
+          placeholder="Dirección completa"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Descripción del lugar</Text>
+        <TextInput
+          style={styles.textArea}
+          value={formData.location_description}
+          onChangeText={(value) => handleChange("location_description", value)}
+          placeholder="Descripción del lugar (características, instalaciones, etc.)"
+          multiline
+          numberOfLines={4}
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Precio del alquiler</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.location_rental_price}
+          onChangeText={(value) => handleChange("location_rental_price", value)}
+          placeholder="Precio en USD"
+          keyboardType="numeric"
+        />
+      </View>
+
+    </>
+  )
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
+          <Icon name="arrow-left" size={24} color={colors.gray[800]} marginTop={40}/>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Crear evento</Text>
+      </View>
+
+      <View style={styles.stepsContainer}>
+        <View style={[styles.step, currentStep === 1 && styles.activeStep]}>
+          <Text style={styles.stepText}>1</Text>
+        </View>
+        <View style={styles.stepLine} />
+        <View style={[styles.step, currentStep === 2 && styles.activeStep]}>
+          <Text style={styles.stepText}>2</Text>
+        </View>
+        <View style={styles.stepLine} />
+        <View style={[styles.step, currentStep === 3 && styles.activeStep]}>
+          <Text style={styles.stepText}>3</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content}>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.form}>
+          {currentStep === 1 && renderStep1()}
+          {currentStep === 2 && renderStep2()}
+          {currentStep === 3 && renderStep3()}
+        </View>
+      </ScrollView>
+
+      <View style={styles.navigationButtons}>
+        {currentStep > 1 && (
+          <TouchableOpacity style={styles.prevButton} onPress={prevStep}>
+            <Text style={styles.navigationButtonText}>Anterior</Text>
+          </TouchableOpacity>
+        )}
+        {currentStep < 3 ? (
+          <TouchableOpacity style={styles.nextButton} onPress={nextStep}>
+            <Text style={styles.navigationButtonText}>Siguiente</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+            <Text style={styles.submitButtonText}>{loading ? "CREANDO EVENTO..." : "CREAR EVENTO"}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    flex: 1,
     backgroundColor: "white",
   },
   header: {
-    fontSize: 22,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: "bold",
+    marginLeft: 16,
+    marginTop: 40,
+  },
+  stepsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+  },
+  step: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.gray[300],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  activeStep: {
+    backgroundColor: colors.indigo[500],
+  },
+  stepText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  stepLine: {
+    height: 2,
+    width: 40,
+    backgroundColor: colors.gray[300],
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  errorContainer: {
+    backgroundColor: colors.red[100],
+    borderWidth: 1,
+    borderColor: colors.red[400],
+    padding: 12,
+    borderRadius: 6,
     marginBottom: 16,
-    color: colors.gray[800],
   },
-  error: {
-    color: colors.red[600],
+  errorText: {
+    color: colors.red[700],
+  },
+  form: {
+    marginBottom: 24,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.gray[700],
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  imagePicker: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  imagePickerText: {
+    color: colors.gray[500],
+  },
+  imagePreview: {
+    width: "100%",
+    height: 128,
+    borderRadius: 6,
     marginTop: 8,
-    textAlign: "center",
   },
-});
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  picker: {
+    height: 50,
+    width: "100%",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
+    marginBottom: 16,
+    color: colors.gray[700],
+  },
+  dateTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  dateTimeLabel: {
+    width: 50,
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.gray[700],
+  },
+  dateInput: {
+    flex: 2,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  timeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
+  prevButton: {
+    backgroundColor: colors.gray[300],
+    borderRadius: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+  },
+  nextButton: {
+    backgroundColor: colors.indigo[500],
+    borderRadius: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    flex: 1,
+    marginLeft: 16,
+  },
+  submitButton: {
+    backgroundColor: colors.indigo[500],
+    borderRadius: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    flex: 1,
+    marginLeft: 16,
+  },
+  submitButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  navigationButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+})
