@@ -27,7 +27,7 @@
     "expo-router": "^4.0.19",
     "expo-status-bar": "~1.11.1",
     "inherits": "^2.0.4",
-    "moment": "^2.29.1",
+    "moment": "^2.30.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.73.4",

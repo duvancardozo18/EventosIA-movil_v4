@@ -10,8 +10,8 @@ import { Picker } from "@react-native-picker/picker"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import { useEvent } from "../../../../contexts/EventContext"
 import { useLocation } from "../../../../contexts/LocationContext"
+import { useEventType } from "../../../../contexts/EventTypeContext"
 import { useAuth } from "../../../../contexts/AuthContext"
-import { eventTypeService } from "../../../../services/api"
 import { colors } from "../../../../styles/colors"
 import { Alert } from 'react-native';
 
@@ -19,21 +19,21 @@ import { Alert } from 'react-native';
 export default function CreateEventScreen() {
   const navigation = useNavigation()
   const { createEvent, loading, error } = useEvent()
+  const { createEventType} = useEventType()
   const { createLocation } = useLocation()
   const { user } = useAuth()
-  const [eventTypes, setEventTypes] = useState([])
   const [currentStep, setCurrentStep] = useState(1)
   const userId = user?.id_user
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     event_state_id: 1,
-    type_of_event_id: "",
+    event_modality: "",
     user_id_created_by: userId || "",
     image: null,
     video_conference_link: "",
     max_participants: "",
-    price: "",
+    price_event: "",
     start_time: new Date(),
     end_time: new Date(),
     location_name: "",
@@ -147,14 +147,53 @@ export default function CreateEventScreen() {
 
   const handleSubmit = async () => {
     try {
+      if (!formData.location_name) {
+        Alert.alert(
+          "Campo requerido",
+          "Por favor ingrese el nombre del lugar",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      if (!formData.location_address) {
+        Alert.alert(
+          "Campo requerido",
+          "Por favor ingrese la dirección del lugar",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+
       console.log("Datos iniciales del formulario:", formData);
   
-      // 1. Crear la ubicación
+      // 1. Crear tipo de evento
+      const typeEventResponse = await createEventType({
+        name: formData.name,
+        description: formData.description || "",
+        event_type: formData.event_modality || "",
+        start_time: formData.start_time || "",
+        end_time: formData.end_time || "",
+        video_conference_link: formData.video_conference_link || "",
+        price: formData.price_event || "",
+        max_participants: formData.max_participants || 0
+      });
+  
+      if (!typeEventResponse?.id_type_of_event) {
+        throw new Error("No se recibió el ID del tipo de evento");
+      }
+  
+      const typeEventId = typeEventResponse.id_type_of_event;
+      console.log("Tipo de evento creado con ID:", typeEventId);
+
+
+      // 2. Crear la ubicación
       const locationResponse = await createLocation({
         name: formData.location_name,
         address: formData.location_address,
         description: formData.location_description || "",
-        rental_price: formData.location_rental_price || 0
+        price: formData.location_rental_price || 0
       });
   
       if (!locationResponse?.id_location) {
@@ -168,17 +207,11 @@ export default function CreateEventScreen() {
       const eventFormData = new FormData();
       
       // 3. Agregar campos como strings (importante)
-      eventFormData.append('location_id', locationId);
       eventFormData.append('name', formData.name);
-      eventFormData.append('description', formData.description);
+      eventFormData.append('type_of_event_id', typeEventId);
+      eventFormData.append('location_id', locationId);
       eventFormData.append('event_state_id', '1'); // Valor por defecto
-      eventFormData.append('type_of_event_id', formData.type_of_event_id);
       eventFormData.append('user_id_created_by', String(userId));
-      eventFormData.append('video_conference_link', formData.video_conference_link || '');
-      eventFormData.append('max_participants', formData.max_participants || '0');
-      eventFormData.append('price', formData.price || '0');
-      eventFormData.append('start_time', formData.start_time.toISOString());
-      eventFormData.append('end_time', formData.end_time.toISOString());
   
       // 4. Agregar imagen si existe
       if (formData.image) {
@@ -207,17 +240,25 @@ export default function CreateEventScreen() {
   const nextStep = () => {
     if (currentStep === 1 && !formData.name) {
       Alert.alert(
-        "Campo requerido", 
-        "Nombre del evento", 
-        [
-          { text: "OK" } 
-        ]
+        "Campo requerido",
+        "Por favor ingrese el nombre del evento",
+        [{ text: "OK" }]
       );
-      return;   
+      return;
     }
-    setCurrentStep(currentStep + 1)
-  }
-
+  
+    if (currentStep === 2 && !formData.event_modality) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor seleccione el tipo de evento",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+  
+  
+    setCurrentStep(currentStep + 1);
+  };
   const prevStep = () => {
     setCurrentStep(currentStep - 1)
   }
@@ -262,11 +303,11 @@ export default function CreateEventScreen() {
   const renderStep2 = () => (
     <>
     <View style={styles.formGroup}>
-        <Text style={styles.label}>Tipo de evento</Text>
+        <Text style={styles.label}>Tipo de evento *</Text>
         <View style={styles.pickerContainer}>
             <Picker
-                selectedValue={formData.type_of_event_id}
-                onValueChange={(value) => handleChange("type_of_event_id", value)}
+                selectedValue={formData.event_modality}
+                onValueChange={(value) => handleChange("event_modality", value)}
                 style={styles.picker}
             >
                 <Picker.Item label="Seleccionar tipo de evento" value="" />
@@ -277,7 +318,7 @@ export default function CreateEventScreen() {
         </View>
     </View>
 
-    {(formData.type_of_event_id === 'virtual' || formData.type_of_event_id === 'hibrido') && (
+    {(formData.event_modality === 'virtual' || formData.event_modality === 'hibrido') && (
         <View style={styles.formGroup}>
             <Text style={styles.label}>Enlace del meet</Text>
             <TextInput
@@ -359,11 +400,11 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Precio del evento</Text>
+        <Text style={styles.label}>Precio del evento (NO incluye: recursos, alimentacion, etc)</Text>
         <TextInput
           style={styles.input}
-          value={formData.price}
-          onChangeText={(value) => handleChange("price", value)}
+          value={formData.price_event}
+          onChangeText={(value) => handleChange("price_event", value)}
           placeholder="Precio del evento"
           keyboardType="numeric"
         />
@@ -412,7 +453,7 @@ export default function CreateEventScreen() {
           style={styles.input}
           value={formData.location_rental_price}
           onChangeText={(value) => handleChange("location_rental_price", value)}
-          placeholder="Precio en USD"
+          placeholder="Precio en COP"
           keyboardType="numeric"
         />
       </View>
@@ -641,8 +682,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[300],
     borderRadius: 6,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 40,
     alignItems: "center",
+    marginRight: 11,
   },
   nextButton: {
     backgroundColor: colors.indigo[500],
@@ -651,7 +693,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     flex: 1,
-    marginLeft: 16,
+   
   },
   submitButton: {
     backgroundColor: colors.indigo[500],
