@@ -34,8 +34,8 @@ export default function CreateEventScreen() {
     video_conference_link: "",
     max_participants: "",
     price_event: "",
-    start_time: new Date(),
-    end_time: new Date(),
+    start_time: null,
+    end_time: null,
     location_name: "",
     location_address: "",
     location_description: "",
@@ -97,40 +97,42 @@ export default function CreateEventScreen() {
   const handleDateChange = (event, selectedDate, type) => {
     if (selectedDate) {
       if (type === "startDate") {
-        const currentStartTime = formData.start_time
         const newDate = new Date(selectedDate)
-        newDate.setHours(currentStartTime.getHours(), currentStartTime.getMinutes())
-
+        // Si ya hay una hora seleccionada, mantenerla
+        if (formData.start_time) {
+          newDate.setHours(formData.start_time.getHours(), formData.start_time.getMinutes())
+        }
+  
         setFormData((prev) => ({
           ...prev,
           start_time: newDate,
         }))
         setShowStartDate(false)
       } else if (type === "startTime") {
-        const currentStartDate = formData.start_time
-        const newDate = new Date(currentStartDate)
+        const newDate = formData.start_time ? new Date(formData.start_time) : new Date()
         newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
-
+  
         setFormData((prev) => ({
           ...prev,
           start_time: newDate,
         }))
         setShowStartTime(false)
       } else if (type === "endDate") {
-        const currentEndTime = formData.end_time
         const newDate = new Date(selectedDate)
-        newDate.setHours(currentEndTime.getHours(), currentEndTime.getMinutes())
-
+        // Si ya hay una hora seleccionada, mantenerla
+        if (formData.end_time) {
+          newDate.setHours(formData.end_time.getHours(), formData.end_time.getMinutes())
+        }
+  
         setFormData((prev) => ({
           ...prev,
           end_time: newDate,
         }))
         setShowEndDate(false)
       } else if (type === "endTime") {
-        const currentEndDate = formData.end_time
-        const newDate = new Date(currentEndDate)
+        const newDate = formData.end_time ? new Date(formData.end_time) : new Date()
         newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes())
-
+  
         setFormData((prev) => ({
           ...prev,
           end_time: newDate,
@@ -160,6 +162,15 @@ export default function CreateEventScreen() {
         Alert.alert(
           "Campo requerido",
           "Por favor ingrese la dirección del lugar",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      if (!formData.start_time || !formData.end_time) {
+        Alert.alert(
+          "Campo requerido",
+          "Por favor ingrese la fecha y hora del evento",
           [{ text: "OK" }]
         );
         return;
@@ -255,6 +266,15 @@ export default function CreateEventScreen() {
       );
       return;
     }
+
+    if (currentStep === 2 && (!formData.start_time || !formData.end_time)) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese la fecha y hora del evento",
+        [{ text: "OK" }]
+      );
+      return;
+    }
   
   
     setCurrentStep(currentStep + 1);
@@ -331,62 +351,87 @@ export default function CreateEventScreen() {
     )}
 
 
-    <View style={styles.formGroup}>
-        <Text style={styles.sectionTitle}>Fecha y hora</Text>
+    <View style={styles.dateTimeRow}>
+      <Text style={styles.dateTimeLabel}>Inicio</Text>
+      <TouchableOpacity 
+        style={styles.dateInput} 
+        onPress={() => setShowStartDate(true)}
+      >
+        <Text>
+          {formData.start_time 
+            ? formData.start_time.toLocaleDateString() 
+            : "Seleccionar fecha"}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.timeInput} 
+        onPress={() => setShowStartTime(true)}
+      >
+        <Text>
+          {formData.start_time 
+            ? formData.start_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
+            : "Seleccionar hora"}
+        </Text>
+      </TouchableOpacity>
+    </View>
 
-        <View style={styles.dateTimeRow}>
-          <Text style={styles.dateTimeLabel}>Inicio</Text>
-          <TouchableOpacity style={styles.dateInput} onPress={() => setShowStartDate(true)}>
-            <Text>{formData.start_time.toLocaleDateString()}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.timeInput} onPress={() => setShowStartTime(true)}>
-            <Text>{formData.start_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.dateTimeRow}>
+      <Text style={styles.dateTimeLabel}>Fin</Text>
+      <TouchableOpacity 
+        style={styles.dateInput} 
+        onPress={() => setShowEndDate(true)}
+      >
+        <Text>
+          {formData.end_time 
+            ? formData.end_time.toLocaleDateString() 
+            : "Seleccionar fecha"}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.timeInput} 
+        onPress={() => setShowEndTime(true)}
+      >
+        <Text>
+          {formData.end_time 
+            ? formData.end_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
+            : "Seleccionar hora"}
+        </Text>
+      </TouchableOpacity>
 
-        <View style={styles.dateTimeRow}>
-          <Text style={styles.dateTimeLabel}>Fin</Text>
-          <TouchableOpacity style={styles.dateInput} onPress={() => setShowEndDate(true)}>
-            <Text>{formData.end_time.toLocaleDateString()}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.timeInput} onPress={() => setShowEndTime(true)}>
-            <Text>{formData.end_time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {showStartDate && (
-          <DateTimePicker
-            value={formData.start_time}
-            mode="date"
-            display="default"
-            onChange={(event, date) => handleDateChange(event, date, "startDate")}
-          />
-        )}
-        {showStartTime && (
-          <DateTimePicker
-            value={formData.start_time}
-            mode="time"
-            display="default"
-            onChange={(event, date) => handleDateChange(event, date, "startTime")}
-          />
-        )}
-        {showEndDate && (
-          <DateTimePicker
-            value={formData.end_time}
-            mode="date"
-            display="default"
-            onChange={(event, date) => handleDateChange(event, date, "endDate")}
-          />
-        )}
-        {showEndTime && (
-          <DateTimePicker
-            value={formData.end_time}
-            mode="time"
-            display="default"
-            onChange={(event, date) => handleDateChange(event, date, "endTime")}
-          />
-        )}
-      </View>
+       {/* DateTimePicker modificados - VAN JUSTO AQUÍ */}
+       {showStartDate && (
+        <DateTimePicker
+          value={formData.start_time || new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, date) => handleDateChange(event, date, "startDate")}
+        />
+      )}
+      {showStartTime && (
+        <DateTimePicker
+          value={formData.start_time || new Date()}
+          mode="time"
+          display="default"
+          onChange={(event, date) => handleDateChange(event, date, "startTime")}
+        />
+      )}
+      {showEndDate && (
+        <DateTimePicker
+          value={formData.end_time || new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, date) => handleDateChange(event, date, "endDate")}
+        />
+      )}
+      {showEndTime && (
+        <DateTimePicker
+          value={formData.end_time || new Date()}
+          mode="time"
+          display="default"
+          onChange={(event, date) => handleDateChange(event, date, "endTime")}
+        />
+      )}
+    </View>
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Número máximo de participantes</Text>
@@ -702,7 +747,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     flex: 1,
-    marginLeft: 16,
   },
   submitButtonText: {
     color: "white",
