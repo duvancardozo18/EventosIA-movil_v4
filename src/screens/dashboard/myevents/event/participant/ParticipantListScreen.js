@@ -23,7 +23,7 @@ export default function ParticipantListScreen() {
     }
 
     loadParticipants()
-  }, [fetchEventParticipants, id])
+  }, [id])
 
   // Filtrar participantes según el término de búsqueda
   const filteredParticipants = participants.filter(
@@ -117,7 +117,7 @@ export default function ParticipantListScreen() {
           <FlatList
             data={filteredParticipants}
             renderItem={renderParticipantItem}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item, index) => (item?.id ? item.id.toString() : index.toString())}
             contentContainerStyle={styles.participantsList}
           />
         )}

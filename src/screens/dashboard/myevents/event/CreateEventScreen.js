@@ -206,7 +206,7 @@ export default function CreateEventScreen() {
         variant="danger"
       />
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {/* {error && <Text style={styles.error}>{error}</Text>}/. */}
     </ScrollView>
   );
 }

@@ -1,5 +1,9 @@
 export const colors = {
   indigo: {
+
+
+    100: "#E0E7FF",
+    200: "#C7D2FE",
     500: "#4F46E5",
     
     600: "#4338CA",

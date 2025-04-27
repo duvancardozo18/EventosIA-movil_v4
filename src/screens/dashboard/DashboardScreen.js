@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { useEvent } from "../../contexts/EventContext"
 import { useAuth } from "../../contexts/AuthContext"
@@ -12,50 +12,60 @@ export default function DashboardScreen() {
   const navigation = useNavigation()
   const { fetchEvents, events, loading, error } = useEvent()
   const { user } = useAuth()
-  const [hasEvents, setHasEvents] = useState(true)
+  const [hasEvents, setHasEvents] = useState(false)
   const scrollRef = useRef(null)
 
   useEffect(() => {
     const loadEvents = async () => {
-      const fetchedEvents = await fetchEvents()
-      setHasEvents(fetchedEvents && fetchedEvents.length > 0)
+      try {
+        const fetchedEvents = await fetchEvents()
+        setHasEvents(fetchedEvents && fetchedEvents.length > 0)
+      } catch (err) {
+        console.error("Error loading events:", err)
+        Alert.alert(
+          "Error", 
+          "Hubo un problema al cargar los eventos. Por favor, intenta nuevamente."
+        )
+      }
     }
 
     loadEvents()
   }, [])
 
-  const renderEventCard = ({ item }) => (
-    <TouchableOpacity style={styles.eventCard} onPress={() => navigation.navigate("EventDetail", { id: item.id })}>
-      {/* imagen comentada 
-      <View style={[styles.eventImageContainer, { backgroundColor: colors.pink[200] }]}>
-        {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={styles.eventImage} resizeMode="cover" />
-        ) : null}
-        <View style={styles.dateTag}>
-          <Text style={styles.dateTagText}>{new Date(item.created_at).toLocaleDateString()}</Text>
-        </View>
-      </View>
-      */}
-      <View style={styles.eventCardContent}>
-        <Text style={styles.eventTitle} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <View style={styles.attendeesContainer}>
-          <View style={styles.avatarGroup}>
-            <View style={[styles.avatar, styles.avatar1]}></View>
-            <View style={[styles.avatar, styles.avatar2]}></View>
-          </View>
-          <Text style={styles.attendeesText}>+20 Going</Text>
-        </View>
-        <View style={styles.locationContainer}>
-          <View style={styles.locationDot}></View>
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.location_id ? `Location ${item.location_id}` : "Sin ubicación"}
+  const renderEventCard = ({ item }) => {
+    // Ensure item exists before rendering
+    if (!item || !item.id_event) {
+      return null
+    }
+    
+    return (
+      <TouchableOpacity 
+        style={styles.eventCard} 
+        onPress={() => {
+          navigation.navigate("EventDetail", item.id_event)
+        }}
+      >
+        <View style={styles.eventCardContent}>
+          <Text style={styles.eventTitle} numberOfLines={1}>
+            {item.name || "Evento sin nombre"}
           </Text>
+          <View style={styles.attendeesContainer}>
+            <View style={styles.avatarGroup}>
+              <View style={[styles.avatar, styles.avatar1]}></View>
+              <View style={[styles.avatar, styles.avatar2]}></View>
+            </View>
+            <Text style={styles.attendeesText}>+20 Going</Text>
+          </View>
+          <View style={styles.locationContainer}>
+            <View style={styles.locationDot}></View>
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.location_id ? `Location ${item.location_id}` : "Sin ubicación"}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  )
+      </TouchableOpacity>
+    )
+  }
 
   if (loading) {
     return (
@@ -81,10 +91,16 @@ export default function DashboardScreen() {
         {error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={() => fetchEvents()}
+            >
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
 
-        {!hasEvents ? (
+        {!hasEvents && !loading && !error ? (
           <View style={styles.noEventsContainer}>
             <View style={styles.noEventsIcon}>{/* Aquí iría un icono de calendario o similar */}</View>
             <Text style={styles.noEventsTitle}>No hay eventos</Text>
@@ -99,15 +115,19 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
 
-            <FlatList
-              data={events}
-              renderItem={renderEventCard}
-              keyExtractor={(item) => item.id_event.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.eventsList}
-              ref={scrollRef}
-            />
+            {events && events.length > 0 ? (
+              <FlatList
+                data={events}
+                renderItem={renderEventCard}
+                keyExtractor={(item) => (item.id_event ? item.id_event.toString() : Math.random().toString())}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.eventsList}
+                ref={scrollRef}
+              />
+            ) : (
+              <Text style={styles.noEventsText}>No se encontraron eventos para mostrar.</Text>
+            )}
           </View>
         )}
       </ScrollView>
@@ -161,6 +181,18 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.red[700],
+    marginBottom: 8,
+  },
+  retryButton: {
+    backgroundColor: colors.red[500],
+    padding: 8,
+    borderRadius: 4,
+    alignItems: "center",
+    alignSelf: "flex-end",
+  },
+  retryButtonText: {
+    color: "white",
+    fontWeight: "600",
   },
   noEventsContainer: {
     alignItems: "center",
@@ -207,31 +239,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
     marginRight: 16,
-    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.25)',
     elevation: 2,
     backgroundColor: "white",
-  },
-  eventImageContainer: {
-    height: 128,
-    position: "relative",
-  },
-  eventImage: {
-    width: "100%",
-    height: "100%",
-  },
-  dateTag: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    backgroundColor: "white",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  dateTagText: {
-    color: colors.red[500],
-    fontSize: 10,
-    fontWeight: "bold",
   },
   eventCardContent: {
     padding: 12,
@@ -291,4 +300,3 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 })
-

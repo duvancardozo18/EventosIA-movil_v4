@@ -20,11 +20,7 @@ const api = axios.create({
       const token = await AsyncStorage.getItem("token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log("Token JWT agregado a los headers");
       }
-      
-      // Debug final de los headers
-      console.log("Headers finales:", config.headers);
       
       return config;
     }, (error) => {
@@ -190,6 +186,10 @@ export const locationService = {
 
 export const categoryService = {
   getCategories: () => api.get("/categories"),
+}
+
+export const invitationService = {
+  sendInvitation: (invitationData) => api.post("/invitacion", invitationData),
 }
 
 export default api

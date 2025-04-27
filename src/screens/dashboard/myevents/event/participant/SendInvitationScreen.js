@@ -6,6 +6,7 @@ import { useNavigation, useRoute } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/Feather"
 import { useEvent } from "../../../../../contexts/EventContext"
 import { colors } from "../../../../../styles/colors"
+import { invitationService } from "../../../../../services/api"
 
 export default function SendInvitationScreen() {
   const navigation = useNavigation()
@@ -26,25 +27,28 @@ export default function SendInvitationScreen() {
   }
 
   const handleSubmit = async () => {
-    // Validar campos requeridos
     if (!formData.email) {
-      alert("Por favor ingrese un correo electrónico")
-      return
+      alert("Por favor ingrese un correo electrónico");
+      return;
     }
-
-    const participantData = {
-      event_id: id,
-      name: formData.name,
-      last_name: formData.last_name,
-      email: formData.email,
-      participant_status_id: 1, // Estado "Invitado"
+  
+    try {
+      const success = await invitationService.sendInvitation({
+        event_id: id,
+        email: formData.email,
+        name: formData.name,
+        last_name: formData.last_name,
+        participant_status_id: 1,
+      });
+  
+      if (success) {
+        navigation.navigate("InvitationSent", { id });
+      }
+    } catch (error) {
+      console.error("Error enviando invitación:", error);
+      alert("Hubo un problema enviando la invitación");
     }
-
-    const success = await registerParticipant(participantData)
-    if (success) {
-      navigation.navigate("InvitationSent", { id })
-    }
-  }
+  };  
 
   return (
     <View style={styles.container}>
@@ -54,57 +58,59 @@ export default function SendInvitationScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.title}>Enviar Invitación</Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>Enviar Invitación</Text>
 
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Icon name="user" size={20} color={colors.gray[400]} />
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Nombre"
-            value={formData.name}
-            onChangeText={(value) => handleChange("name", value)}
-          />
-        </View>
+        )}
 
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Icon name="user" size={20} color={colors.gray[400]} />
+        <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Icon name="user" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre"
+              value={formData.name}
+              onChangeText={(value) => handleChange("name", value)}
+            />
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Apellido"
-            value={formData.last_name}
-            onChangeText={(value) => handleChange("last_name", value)}
-          />
-        </View>
 
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Icon name="mail" size={20} color={colors.gray[400]} />
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Icon name="user" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Apellido"
+              value={formData.last_name}
+              onChangeText={(value) => handleChange("last_name", value)}
+            />
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Correo electrónico"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={formData.email}
-            onChangeText={(value) => handleChange("email", value)}
-          />
-        </View>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
-          <Text style={styles.submitButtonText}>{loading ? "ENVIANDO..." : "ENVIAR"}</Text>
-          {!loading && <Icon name="arrow-right" size={20} color="white" style={styles.buttonIcon} />}
-        </TouchableOpacity>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Icon name="mail" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Correo electrónico"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={formData.email}
+              onChangeText={(value) => handleChange("email", value)}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+            <Text style={styles.submitButtonText}>{loading ? "ENVIANDO..." : "ENVIAR"}</Text>
+            {!loading && <Icon name="arrow-right" size={20} color="white" style={styles.buttonIcon} />}
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   )
@@ -119,10 +125,14 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 24,
   },
+  content: {
+    flex: 1,
+    justifyContent: "center",
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 32,
+    marginBottom: 24,
     textAlign: "center",
   },
   errorContainer: {
@@ -137,11 +147,10 @@ const styles = StyleSheet.create({
     color: colors.red[700],
   },
   form: {
-    marginBottom: 24,
+    gap: 16,
   },
   inputContainer: {
     position: "relative",
-    marginBottom: 16,
   },
   inputIconContainer: {
     position: "absolute",
@@ -165,10 +174,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.indigo[500],
     borderRadius: 6,
     paddingVertical: 12,
+    paddingHorizontal: 32,
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
+    alignSelf: "center",
+    marginTop: 16,
   },
   submitButtonText: {
     color: "white",
@@ -179,4 +189,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 })
-
