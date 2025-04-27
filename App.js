@@ -23,7 +23,6 @@ import DashboardScreen from "./src/screens/dashboard/DashboardScreen";
 import CreateEventScreen from "./src/screens/dashboard/myevents/event/CreateEventScreen";
 import EventCreatedScreen from "./src/screens/dashboard/myevents/event/EventCreatedScreen";
 import MyEventsScreen from "./src/screens/dashboard/myevents/MyEventsScreen";
-import EventDetailScreen from "./src/screens/dashboard/myevents/event/EventDetailScreen";
 import EventDeletedScreen from "./src/screens/dashboard/myevents/event/EventDeletedScreen";
 import ParticipantListScreen from "./src/screens/dashboard/myevents/event/participant/ParticipantListScreen";
 import SendInvitationScreen from "./src/screens/dashboard/myevents/event/participant/SendInvitationScreen";
@@ -50,6 +49,7 @@ import FoodCreatedScreen from "./src/screens/dashboard/myevents/event/food/FoodC
 import FoodDeletedScreen from "./src/screens/dashboard/myevents/event/food/FoodDeletedScreen";
 import NotificationsScreen from "./src/screens/dashboard/notification/NotificationsScreen";
 import ProfileScreen from "./src/screens/dashboard/profile/ProfileScreen";
+import DetailEventScreen from "./src/screens/dashboard/myevents/event/DetailEventScreen";
 
 // Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -80,7 +80,7 @@ export default function App() {
                       <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
                       <Stack.Screen name="EventCreated" component={EventCreatedScreen} />
                       <Stack.Screen name="MyEvents" component={MyEventsScreen} />
-                      <Stack.Screen name="EventDetail" component={EventDetailScreen} />
+                      <Stack.Screen name="EventDetail" component={DetailEventScreen} />
                       <Stack.Screen name="EventDeleted" component={EventDeletedScreen} />
                       <Stack.Screen name="ParticipantList" component={ParticipantListScreen} />
                       <Stack.Screen name="SendInvitation" component={SendInvitationScreen} />

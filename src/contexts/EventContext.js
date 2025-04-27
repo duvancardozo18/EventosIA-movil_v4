@@ -162,11 +162,11 @@ export const EventProvider = ({ children }) => {
     }
   }
 
-  const assignResourceToEvent = async (eventId, resourceId) => {
+  const assignResourceToEvent = async (data) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await resourceService.assignResourceToEvent({ id_event: eventId, id_resource: resourceId })
+      const response = await resourceService.assignResourceToEvent(data)
       return response.data
     } catch (err) {
       setError(err.response?.data?.message || "Error al asignar recurso al evento")

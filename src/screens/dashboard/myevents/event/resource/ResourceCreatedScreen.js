@@ -6,18 +6,20 @@ import { colors } from "../../../../../styles/colors"
 const ResourceCreatedScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
-  const { eventId } = route.params
+  const {eventId}  = route.params
+
+  console.log("Event ID received:", eventId)
 
   const handleViewResources = () => {
-    navigation.navigate("ResourceListScreen", { eventId })
+    navigation.navigate("ResourceList", { eventId })
   }
 
   const handleAddAnother = () => {
-    navigation.navigate("AddResourceScreen", { eventId })
+    navigation.navigate("AddResource", { eventId })
   }
 
   const handleBackToEvent = () => {
-    navigation.navigate("EventDetailScreen", { eventId })
+    navigation.navigate("EventDetail", { eventId })
   }
 
   return (
@@ -114,4 +116,3 @@ const styles = StyleSheet.create({
 })
 
 export default ResourceCreatedScreen
-

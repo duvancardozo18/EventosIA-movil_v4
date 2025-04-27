@@ -1,36 +1,72 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, TextInput } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import Icon from "react-native-vector-icons/Feather"
-import { useEvent } from "../../../../../contexts/EventContext"
-import BottomTabBar from "../../../../../components/BottomTabBar"
-import { colors } from "../../../../../styles/colors"
+import { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, TextInput, Alert } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
+import { useEvent } from "../../../../../contexts/EventContext";
+import { useAuth } from "../../../../../contexts/AuthContext";
+import BottomTabBar from "../../../../../components/BottomTabBar";
+import { colors } from "../../../../../styles/colors";
 
 export default function ParticipantListScreen() {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { id } = route.params
-  const [searchTerm, setSearchTerm] = useState("")
-  const { fetchEventParticipants, loading, error } = useEvent()
-  const [participants, setParticipants] = useState([])
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { id } = route.params;
+  const { user } = useAuth();
+  const { fetchEventParticipants, deleteParticipant, loading, error } = useEvent();
+  
+  const [participants, setParticipants] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [deletingParticipant, setDeletingParticipant] = useState(false); // Nuevo loading local
 
   useEffect(() => {
     const loadParticipants = async () => {
-      const data = await fetchEventParticipants(id)
-      setParticipants(data || [])
+      const data = await fetchEventParticipants(id);
+      setParticipants(Array.isArray(data) ? data : []);
+    };
+  
+    loadParticipants();
+  }, [id]);  
+
+  const handleDeleteParticipant = (participantId) => {
+    Alert.alert(
+      "Confirmar eliminación",
+      "¿Estás seguro que deseas eliminar este participante?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Eliminar", 
+          style: "destructive", 
+          onPress: () => confirmDelete(participantId)
+        }
+      ]
+    );
+  };
+
+  const confirmDelete = async (participantId) => {
+    try {
+      setDeletingParticipant(true);
+      const success = await deleteParticipant(user.id_user, { id_participants: participantId });
+
+      if (success) {
+        navigation.navigate("InvitationDeleted", { eventId: id });
+      } else {
+        Alert.alert("Error", "No se pudo eliminar el participante");
+      }
+    } catch (error) {
+      console.error("Error eliminando participante:", error);
+      Alert.alert("Error", "Hubo un problema eliminando el participante");
+    } finally {
+      setDeletingParticipant(false);
     }
+  };
 
-    loadParticipants()
-  }, [fetchEventParticipants, id])
-
-  // Filtrar participantes según el término de búsqueda
   const filteredParticipants = participants.filter(
     (participant) =>
       participant.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      participant.user_email?.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      participant.user_email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const renderParticipantItem = ({ item }) => (
     <View style={styles.participantItem}>
@@ -40,58 +76,52 @@ export default function ParticipantListScreen() {
         </View>
         <View>
           <Text style={styles.participantName}>{item.user_name || "Usuario"}</Text>
-          <Text style={styles.participantEmail}>{item.user_email || "Sin correo"}</Text>
+          <Text style={styles.participantEmail}>{item.email || "Sin correo"}</Text>
         </View>
       </View>
 
       <View style={styles.participantActions}>
         <View style={[styles.statusTag, item.participant_status_id === 2 ? styles.confirmedTag : styles.invitedTag]}>
-          <Text
-            style={[
+          <Text style={[
               styles.statusTagText,
               item.participant_status_id === 2 ? styles.confirmedTagText : styles.invitedTagText,
-            ]}
-          >
-            {item.participant_status_id === 1
-              ? "Invitado"
-              : item.participant_status_id === 2
-                ? "Confirmado"
-                : "Desconocido"}
+            ]}>
+            {item.participant_status_id === 1 ? "Invitado" : item.participant_status_id === 2 ? "Confirmado" : "Desconocido"}
           </Text>
         </View>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => navigation.navigate("InvitationDeleted", { id, participanteId: item.id })}
+          onPress={() => handleDeleteParticipant(item.id_participants)}
         >
           <Icon name="trash-2" size={20} color={colors.gray[400]} />
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 
-  if (loading) {
+  if (loading && !deletingParticipant) {
     return (
       <View style={styles.loadingContainer}>
         <Text>Cargando participantes...</Text>
       </View>
-    )
+    );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("EventDetail", { id })}>
-          <Icon name="arrow-left" size={24} color={colors.gray[800]} />
-        </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Icon name="arrow-left" size={24} color={colors.gray[800]} />
+      </TouchableOpacity>
         <Text style={styles.headerTitle}>Participantes</Text>
       </View>
 
       <View style={styles.content}>
-        {error ? (
+        {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
-        ) : null}
+        )}
 
         <View style={styles.searchRow}>
           <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("SendInvitation", { id })}>
@@ -117,7 +147,7 @@ export default function ParticipantListScreen() {
           <FlatList
             data={filteredParticipants}
             renderItem={renderParticipantItem}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item, index) => (item?.id_participants ? item.id_participants.toString() : index.toString())}
             contentContainerStyle={styles.participantsList}
           />
         )}
@@ -125,7 +155,7 @@ export default function ParticipantListScreen() {
 
       <BottomTabBar activeTab="home" />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -264,5 +294,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-})
-
+});
