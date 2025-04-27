@@ -51,77 +51,9 @@ export const userService = {
 }
 
 // Servicios de eventos
-  // export const eventService = {
-  //   getEvents: () => api.get("/events"),
-  //   getEvent: (id) => api.get(`/events/${id}`),
-  //   createEvent: (eventData) => {
-  //     const formData = new FormData()
-  //     for (const key in eventData) {
-  //       if (key === "image" && eventData[key]) {
-  //         const uriParts = eventData[key].uri.split(".")
-  //         const fileType = uriParts[uriParts.length - 1]
-
-  //         formData.append("image", {
-  //           uri: eventData[key].uri,
-  //           name: `photo.${fileType}`,
-  //           type: `image/${fileType}`,
-  //         })
-  //       } else {
-  //         formData.append(key, eventData[key])
-  //       }
-  //     }
-
-  //     return api.post("/events", formData, {
-  //       headers: {
-  //         "Content-Type": "multipart/form-data",
-  //       },
-  //     })
-  //   },
-  //   updateEvent: (id, eventData) => {
-  //     const formData = new FormData()
-  //     for (const key in eventData) {
-  //       if (key === "image" && eventData[key]) {
-  //         const uriParts = eventData[key].uri.split(".")
-  //         const fileType = uriParts[uriParts.length - 1]
-
-  //         formData.append("image", {
-  //           uri: eventData[key].uri,
-  //           name: `photo.${fileType}`,
-  //           type: `image/${fileType}`,
-  //         })
-  //       } else {
-  //         formData.append(key, eventData[key])
-  //       }
-  //     }
-
-  //     return api.put(`/events/${id}`, formData, {
-  //       headers: {
-  //         "Content-Type": "multipart/form-data",
-  //       },
-  //     })
-  //   },
-  //   deleteEvent: (id) => api.delete(`/events/${id}`),
-  // }
-
   export const eventService = {
     getEvents: () => api.get("/events"),
     getEvent: (id) => api.get(`/events/${id}`),
-  
-    createEvent: (formData) => {
-      // Debug compatible con React Native
-      console.log("Enviando FormData:", {
-        partsCount: formData._parts.length,
-        hasImage: formData._parts.some(p => p[0] === 'image')
-      });
-      
-      return api.post("/events", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        },
-        transformRequest: (data) => data
-      });
-    },
-  
     updateEvent: (id, formData) => {
       return api.put(`/events/${id}`, formData, {
         headers: {
@@ -129,8 +61,33 @@ export const userService = {
         }
       });
     },
-  
-    deleteEvent: (id) => api.delete(`/events/${id}`)
+    deleteEvent: (id) => api.delete(`/events/${id}`),
+    createEvent: (formData) => {
+    // Crear FormData para manejar la imagen y otros campos
+    const formDataToSend = new FormData();
+    
+    // Agrega todos los campos al FormData
+    Object.keys(formData).forEach(key => {
+      if (key === 'image' && formData[key]) {
+        formDataToSend.append('image', {
+          uri: formData.image.uri,
+          type: formData.image.mimeType,
+          name: formData.image.fileName || 'event_image.jpg'
+        });
+      } else if (key === 'start_time' || key === 'end_time') {
+        formDataToSend.append(key, formData[key].toISOString());
+      } else if (formData[key] !== null && formData[key] !== undefined) {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
+    
+      return api.post("/events", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        },
+        transformRequest: (data) => data
+      });
+    },
   };
 
 // Servicios de comida

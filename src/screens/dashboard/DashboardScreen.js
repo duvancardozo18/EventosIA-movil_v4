@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Alert } from "react-native"
@@ -8,6 +9,8 @@ import { useEvent } from "../../contexts/EventContext"
 import { useAuth } from "../../contexts/AuthContext"
 import BottomTabBar from "../../components/BottomTabBar"
 import { colors } from "../../styles/colors"
+import { FontAwesome6 } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
   const navigation = useNavigation()
@@ -36,10 +39,9 @@ export default function DashboardScreen() {
         )
       }
     }
-
-    loadEvents()
-  }, [])
-
+    loadEvents();
+  }, []);
+  
   const renderEventCard = ({ item }) => {
     // Ensure item exists before rendering
     if (!item || !item.id_event) {
@@ -56,6 +58,43 @@ export default function DashboardScreen() {
         <View style={styles.eventCardContent}>
           <Text style={styles.eventTitle} numberOfLines={1}>
             {item.name || "Evento sin nombre"}
+      <View
+        style={[
+          styles.eventImageContainer,
+          { backgroundColor: colors.gray[300] },
+        ]}
+      >
+        {item.image_url &&
+        Array.isArray(item.image_url) &&
+        item.image_url.length > 0 ? (
+          <Image
+            source={{ uri: item.image_url[0] }}
+            style={styles.eventImage}
+            resizeMode="cover"
+          />
+        ) : null}
+        <View style={styles.dateTag}>
+          <Text style={styles.eventStateText}>
+            {item.state ? item.state : "Estado no disponible"}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.eventCardContent}>
+        <Text style={styles.eventTitle} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <View style={styles.attendeesContainer}>
+          <Ionicons name="calendar-number" size={16} style={styles.calendarStyle} />
+          <Text style={styles.dateTagText}>
+            {item.start_time
+              ? new Date(item.start_time).toLocaleDateString()
+              : "Fecha no disponible"}
+          </Text>
+        </View>
+        <View style={styles.locationContainer}>
+          <FontAwesome6 name="location-dot" size={16} style={styles.locationDot}/>
+          <Text style={styles.locationText} numberOfLines={1}>
+            {item.location ? `${item.location}` : "Sin ubicación"}
           </Text>
           <View style={styles.attendeesContainer}>
             <View style={styles.avatarGroup}>
@@ -75,12 +114,13 @@ export default function DashboardScreen() {
     )
   }
 
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <Text>Cargando eventos...</Text>
       </View>
-    )
+    );
   }
 
   return (
@@ -91,7 +131,10 @@ export default function DashboardScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.createButtonContainer}>
-          <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate("CreateEvent")}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => navigation.navigate("CreateEvent")}
+          >
             <Text style={styles.createButtonText}>CREAR EVENTO</Text>
           </TouchableOpacity>
         </View>
@@ -110,9 +153,13 @@ export default function DashboardScreen() {
 
         {!hasEvents && !loading && !error ? (
           <View style={styles.noEventsContainer}>
-            <View style={styles.noEventsIcon}>{/* Aquí iría un icono de calendario o similar */}</View>
+            <View style={styles.noEventsIcon}>
+              {/* Aquí iría un icono de calendario o similar */}
+            </View>
             <Text style={styles.noEventsTitle}>No hay eventos</Text>
-            <Text style={styles.noEventsText}>Comunícate con un gestor de eventos</Text>
+            <Text style={styles.noEventsText}>
+              Comunícate con un gestor de eventos
+            </Text>
           </View>
         ) : (
           <View>
@@ -142,7 +189,7 @@ export default function DashboardScreen() {
 
       <BottomTabBar activeTab="home" />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -169,6 +216,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     marginBottom: 24,
   },
+  calendarStyle: {
+    marginRight: 4
+  },
   createButton: {
     backgroundColor: colors.indigo[500],
     paddingVertical: 8,
@@ -186,6 +236,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 6,
     marginBottom: 16,
+  },
+  eventStateText: {
+    color: colors.indigo[500], // Color del texto, puedes cambiarlo por cualquier otro color de tu paleta
+    fontSize: 12, // Tamaño de la fuente
+    fontWeight: "bold", // Puedes elegir entre 'normal', 'bold', etc.
   },
   errorText: {
     color: colors.red[700],
@@ -250,6 +305,32 @@ const styles = StyleSheet.create({
     elevation: 2,
     backgroundColor: "white",
   },
+    boxShadow: "0px 2px 3.84px rgba(0, 0, 0, 0.25)",
+    elevation: 2,
+    backgroundColor: "white",
+  },
+  eventImageContainer: {
+    height: 128,
+    position: "relative",
+  },
+  eventImage: {
+    width: "100%",
+    height: "100%",
+  },
+  dateTag: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "white",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  dateTagText: {
+    color: colors.gray[500],
+    fontSize: 10,
+    fontWeight: "bold",
+  },
   eventCardContent: {
     padding: 12,
   },
@@ -275,12 +356,6 @@ const styles = StyleSheet.create({
     borderColor: "white",
     backgroundColor: colors.gray[300],
   },
-  avatar1: {
-    zIndex: 1,
-  },
-  avatar2: {
-    marginLeft: -8,
-  },
   attendeesText: {
     color: colors.indigo[500],
     fontSize: 12,
@@ -290,10 +365,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   locationDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.gray[200],
+
     justifyContent: "center",
     alignItems: "center",
     marginRight: 4,
@@ -308,3 +380,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 })
+
