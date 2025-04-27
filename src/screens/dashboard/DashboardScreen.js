@@ -55,47 +55,40 @@ export default function DashboardScreen() {
           navigation.navigate("EventDetail", item.id_event)
         }}
       >
+        <View style={styles.eventImageContainer}>
+          {item.image_url &&
+          Array.isArray(item.image_url) &&
+          item.image_url.length > 0 ? (
+            <Image
+              source={{ uri: item.image_url[0] }}
+              style={styles.eventImage}
+              resizeMode="cover"
+            />
+          ) : null}
+          <View style={styles.dateTag}>
+            <Text style={styles.eventStateText}>
+              {item.state ? item.state : "Estado no disponible"}
+            </Text>
+          </View>
+        </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventTitle} numberOfLines={1}>
-            {item.name || "Evento sin nombre"}
-      <View
-        style={[
-          styles.eventImageContainer,
-          { backgroundColor: colors.gray[300] },
-        ]}
-      >
-        {item.image_url &&
-        Array.isArray(item.image_url) &&
-        item.image_url.length > 0 ? (
-          <Image
-            source={{ uri: item.image_url[0] }}
-            style={styles.eventImage}
-            resizeMode="cover"
-          />
-        ) : null}
-        <View style={styles.dateTag}>
-          <Text style={styles.eventStateText}>
-            {item.state ? item.state : "Estado no disponible"}
+            {item.name}
           </Text>
-        </View>
-      </View>
-      <View style={styles.eventCardContent}>
-        <Text style={styles.eventTitle} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <View style={styles.attendeesContainer}>
-          <Ionicons name="calendar-number" size={16} style={styles.calendarStyle} />
-          <Text style={styles.dateTagText}>
-            {item.start_time
-              ? new Date(item.start_time).toLocaleDateString()
-              : "Fecha no disponible"}
-          </Text>
-        </View>
-        <View style={styles.locationContainer}>
-          <FontAwesome6 name="location-dot" size={16} style={styles.locationDot}/>
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.location ? `${item.location}` : "Sin ubicación"}
-          </Text>
+          <View style={styles.attendeesContainer}>
+            <Ionicons name="calendar-number" size={16} style={styles.calendarStyle} />
+            <Text style={styles.dateTagText}>
+              {item.start_time
+                ? new Date(item.start_time).toLocaleDateString()
+                : "Fecha no disponible"}
+            </Text>
+          </View>
+          <View style={styles.locationContainer}>
+            <FontAwesome6 name="location-dot" size={16} style={styles.locationDot}/>
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.location ? `${item.location}` : "Sin ubicación"}
+            </Text>
+          </View>
           <View style={styles.attendeesContainer}>
             <View style={styles.avatarGroup}>
               <View style={[styles.avatar, styles.avatar1]}></View>
@@ -103,17 +96,10 @@ export default function DashboardScreen() {
             </View>
             <Text style={styles.attendeesText}>+20 Going</Text>
           </View>
-          <View style={styles.locationContainer}>
-            <View style={styles.locationDot}></View>
-            <Text style={styles.locationText} numberOfLines={1}>
-              {item.location_id ? `Location ${item.location_id}` : "Sin ubicación"}
-            </Text>
-          </View>
         </View>
       </TouchableOpacity>
     )
   }
-
 
   if (loading) {
     return (
@@ -304,10 +290,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
     elevation: 2,
     backgroundColor: "white",
-  },
     boxShadow: "0px 2px 3.84px rgba(0, 0, 0, 0.25)",
-    elevation: 2,
-    backgroundColor: "white",
   },
   eventImageContainer: {
     height: 128,
