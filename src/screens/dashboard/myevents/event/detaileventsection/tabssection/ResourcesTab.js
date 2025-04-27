@@ -41,7 +41,7 @@ const ResourcesTab = ({ resources, loading, event_id, navigation }) => {
 
       {resources.length > 3 && (
         <DetailsButton 
-          onPress={() => navigation.navigate("ResourcesList", { id: event_id })} 
+          onPress={() => navigation.navigate("ResourceList", { event_id: event_id })} 
           text="Ver todos los recursos" 
         />
       )}

@@ -1,29 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { useNavigation } from "@react-navigation/native"
-import Icon from "react-native-vector-icons/Feather"
-import { useEvent } from "../../../../contexts/EventContext"
-import { colors } from "../../../../styles/colors"
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
+import { colors } from "../../../../styles/colors";
 
-export default function EventDeletedScreen({ route }) {
-  const { id } = route.params
-  const navigation = useNavigation()
-  const { deleteEvent } = useEvent()
-
-  useEffect(() => {
-    // Eliminar el evento cuando se carga la pantalla
-    const eliminarEvento = async () => {
-      try {
-        await deleteEvent(id)
-      } catch (error) {
-        console.error("Error al eliminar el evento:", error)
-      }
-    }
-
-    eliminarEvento()
-  }, [deleteEvent, id])
+export default function EventDeletedScreen() {
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
@@ -46,7 +29,7 @@ export default function EventDeletedScreen({ route }) {
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -96,5 +79,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-})
-
+});

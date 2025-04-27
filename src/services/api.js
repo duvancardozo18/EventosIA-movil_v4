@@ -189,7 +189,7 @@ export const categoryService = {
 }
 
 export const invitationService = {
-  sendInvitation: (invitationData) => api.post("/invitacion", invitationData),
+  sendInvitation: (invitationData) => api.post("invitacion", invitationData),
 }
 
 export default api

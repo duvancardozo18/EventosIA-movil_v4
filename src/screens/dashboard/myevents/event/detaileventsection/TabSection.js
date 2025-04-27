@@ -4,6 +4,7 @@ import { colors } from '../../../../../styles/colors';
 import ParticipantsTab from './tabssection/ParticipantsTab';
 import ResourcesTab from './tabssection/ResourcesTab';
 import FoodsTab from './tabssection/FoodsTab';
+import { useAuth } from '../../../../../contexts/AuthContext';
 
 
 const TabSection = ({
@@ -29,6 +30,11 @@ const TabSection = ({
     </TouchableOpacity>
   );
 
+  const { user } = useAuth();
+  console.log("User in TabSection:", user);
+
+  const isGestor = user?.role_name === "Gestor" || "SuperAdmin"; // O como venga en tu backend ("admin", "manager", etc.)
+
   return (
     <View style={styles.tabsSection}>
       <View style={styles.tabsHeader}>
@@ -44,6 +50,7 @@ const TabSection = ({
             loading={loadingParticipants}
             event_id={event_id}
             navigation={navigation}
+            isGestor={isGestor}
           />
         )}
         
@@ -53,6 +60,7 @@ const TabSection = ({
             loading={loadingResources}
             event_id={event_id}
             navigation={navigation}
+            isGestor={isGestor}
           />
         )}
         
@@ -62,6 +70,7 @@ const TabSection = ({
             loading={loadingFoods}
             event_id={event_id}
             navigation={navigation}
+            isGestor={isGestor}
           />
         )}
       </View>

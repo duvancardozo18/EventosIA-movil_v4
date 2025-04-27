@@ -10,6 +10,7 @@ import ImageBanner from "../../../../../assets/banner_event.jpg"
 import EventHeader from './detaileventsection/EventHeader';
 import EventDescription from './detaileventsection/EventDescription';
 import TabSection from "./detaileventsection/TabSection";
+import Button from "../../../../components/Button";
 
 export default function CompleteEventScreen() {
   const navigation = useNavigation();
@@ -34,6 +35,7 @@ export default function CompleteEventScreen() {
   const [loadingResources, setLoadingResources] = useState(false)
   const [loadingFoods, setLoadingFoods] = useState(false)
   const [loadingParticipants, setLoadingParticipants] = useState(false)
+  const { deleteEvent } = useEvent(); // asegúrate que lo tienes importado del contexto
   
   useEffect(() => {
     // Fetch event details when component mounts
@@ -137,6 +139,7 @@ useEffect(() => {
     }
   };
 
+
   const formatTimeRange = () => {
     if (!eventData) return "Horario no disponible";
     
@@ -147,23 +150,37 @@ useEffect(() => {
   };
 
   const handleSaveEvent = async () => {
+    // por ahora el boton no hace nada, solo muestra un mensaje
+    Alert.alert("Evento guardado", "El evento ha sido guardado correctamente.");
+  }
+
+  const handleDeleteEvent = async () => {
     try {
-      Alert.alert("Éxito", "Todos los detalles del evento han sido guardados");
-      navigation.navigate("EventDetail", { event_id: event_id });
+      const confirm = await new Promise((resolve) => {
+        Alert.alert(
+          "Confirmar eliminación",
+          "¿Estás seguro que deseas eliminar este evento?",
+          [
+            { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
+            { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
+          ]
+        );
+      });
+  
+      if (!confirm) return;
+  
+      const success = await deleteEvent(event_id);
+  
+      if (success) {
+        navigation.navigate("EventDeleted");
+      } else {
+        Alert.alert("Error", "No se pudo eliminar el evento");
+      }
     } catch (error) {
-      console.error("Error al guardar detalles del evento:", error);
-      Alert.alert("Error", "No se pudieron guardar todos los detalles del evento");
+      console.error("Error al eliminar evento:", error);
+      Alert.alert("Error", "Hubo un problema eliminando el evento");
     }
   };
-
-  // If still loading or no event data
-  if (!eventData && loading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>Cargando información del evento...</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -194,14 +211,30 @@ useEffect(() => {
           navigation={navigation}
         />
 
-        {/* Botón para guardar todo el evento */}
-        <TouchableOpacity 
-          style={styles.saveButton}
+        <Button
+          title="Facturación"
           onPress={handleSaveEvent}
-          disabled={loading}
-        >
-          <Text style={styles.saveButtonText}>Guardar Cambios</Text>
-        </TouchableOpacity>
+          backgroundColor={colors.indigo[500]}
+          color="white"
+          width="75%"
+          height={50}
+          fontSize={16}
+          fontWeight="600"
+          marginTop={24}
+        />
+
+        <Button
+          title="Eliminar evento"
+          onPress={handleDeleteEvent}
+          backgroundColor={colors.red[500]}
+          color="white"
+          width="75%"
+          height={50}
+          fontSize={16}
+          fontWeight="600"
+          marginTop={16}
+        />
+
       </ScrollView>
 
       <BottomTabBar activeTab="events" />
@@ -220,29 +253,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: {
-    padding: 0,
+    paddingHorizontal: 16,  // un poco de margen a los lados
+    paddingBottom: 100,     // espacio libre debajo de los botones
   },
   loadingText: {
     textAlign: 'center',
     fontSize: 16,
     color: colors.gray[500],
     marginTop: 20,
-  },
-  saveButton: {
-    backgroundColor: colors.indigo[500],
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 32,
-    marginHorizontal: 16,
-    elevation: 2,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
+  }
 });

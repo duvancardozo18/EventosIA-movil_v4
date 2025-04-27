@@ -1,17 +1,19 @@
 "use client"
 
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState } from "react"
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { Feather } from "@expo/vector-icons"
-import { ResourceContext } from "../../../../../contexts/ResourceContext"
+import { useResource } from "../../../../../contexts/ResourceContext";
+import { useEvent } from "../../../../../contexts/EventContext";
 import { colors } from "../../../../../styles/colors"
 
 const ResourceListScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
   const { eventId } = route.params
-  const { getEventResources, deleteResource } = useContext()
+  const { getResourcesByEvent, deleteEventResource } = useResource();
+  const { getEventResources } = useEvent();
 
   const [resources, setResources] = useState([])
   const [loading, setLoading] = useState(true)
@@ -24,6 +26,7 @@ const ResourceListScreen = () => {
   const loadResources = async () => {
     setLoading(true)
     try {
+      // Asumiendo que getEventResources devuelve los recursos asociados a un evento
       const resourceData = await getEventResources(eventId)
       setResources(resourceData)
       setError(null)
@@ -54,7 +57,7 @@ const ResourceListScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteResource(eventId, resourceId)
+              await deleteEventResource(eventId, resourceId)
               // Refresh the list after deletion
               loadResources()
             } catch (err) {
@@ -71,16 +74,17 @@ const ResourceListScreen = () => {
       <View style={styles.resourceInfo}>
         <Text style={styles.resourceName}>{item.name}</Text>
         <Text style={styles.resourceDetail}>Cantidad: {item.quantity}</Text>
-        <Text style={styles.resourceDetail}>Costo: ${item.cost}</Text>
-        {item.notes && <Text style={styles.resourceNotes}>{item.notes}</Text>}
+        <Text style={styles.resourceDetail}>Valor Unitario: ${item.unitValue}</Text>
+        <Text style={styles.resourceDetail}>Costo Total: ${item.quantity * item.unitValue}</Text>
+        {item.description && <Text style={styles.resourceNotes}>{item.description}</Text>}
       </View>
 
       <View style={styles.resourceActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleEditResource(item.id)}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleEditResource(item.id_resource || item.id)}>
           <Feather name="edit" size={20} color={colors.primary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleDeleteResource(item.id)}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleDeleteResource(item.id_resource || item.id)}>
           <Feather name="trash-2" size={20} color={colors.error} />
         </TouchableOpacity>
       </View>
@@ -124,7 +128,7 @@ const ResourceListScreen = () => {
         <FlatList
           data={resources}
           renderItem={renderResourceItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => (item.id_resource || item.id).toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
@@ -263,4 +267,3 @@ const styles = StyleSheet.create({
 })
 
 export default ResourceListScreen
-

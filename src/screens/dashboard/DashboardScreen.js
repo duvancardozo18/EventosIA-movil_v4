@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Alert } from "react-native"
+import { useFocusEffect } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
 import { useEvent } from "../../contexts/EventContext"
 import { useAuth } from "../../contexts/AuthContext"
@@ -15,6 +16,13 @@ export default function DashboardScreen() {
   const [hasEvents, setHasEvents] = useState(false)
   const scrollRef = useRef(null)
 
+    // Recargar eventos automáticamente al enfocarse la pantalla
+    useFocusEffect(
+      useCallback(() => {
+        fetchEvents();
+      }, [])
+    );
+    
   useEffect(() => {
     const loadEvents = async () => {
       try {

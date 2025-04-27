@@ -4,8 +4,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 
-const ParticipantsTab = ({ participants, loading, event_id, navigation }) => {
-  console.log("ParticipantsTab props:", participants);
+const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor }) => {
   const handleAddPress = () => {
     navigation.navigate("SendInvitation", { id: event_id });
   };
@@ -13,60 +12,51 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation }) => {
   if (loading) {
     return <Text style={styles.loadingText}>Cargando participantes...</Text>;
   }
-  
-  if (participants.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No hay participantes registrados</Text>
-        <AddButton onPress={handleAddPress} />
-      </View>
-    );
-  }
-  
-const confirmedCount = participants.filter(p => p.status_name === "Confirmado").length;
-const invitedCount = participants.filter(p => p.status_name === "Invitado").length;
 
-  
+  const confirmedCount = participants.filter(p => p.status_name === "Confirmado").length;
+  const invitedCount = participants.filter(p => p.status_name === "Invitado").length;
+
   return (
     <>
-<View style={styles.statsContainer}>
-      <View style={styles.statsRow}>
-        <StatItem 
-          label="Confirmados" 
-          value={confirmedCount} 
-          isConfirmed={true}
-          icon="check-circle"
-        />
-        <StatItem 
-          label="Invitados" 
-          value={invitedCount} 
-          isConfirmed={false}
-          icon="message-circle"
-        />
+      <View style={styles.statsContainer}>
+        <View style={styles.statsRow}>
+          <StatItem 
+            label="Confirmados" 
+            value={confirmedCount} 
+            isConfirmed={true}
+            icon="check-circle"
+          />
+          <StatItem 
+            label="Invitados" 
+            value={invitedCount} 
+            isConfirmed={false}
+            icon="message-circle"
+          />
+        </View>
+        {isGestor && <AddButton onPress={handleAddPress} />}
       </View>
-      <AddButton onPress={handleAddPress} />
-    </View>
 
-    {participants.length > 0 ? (
-      participants.slice(0, 3).map(participant => (
-        <ParticipantItem 
-          key={participant.id} 
-          participant={participant} 
-        />
-      ))
-    ) : (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No hay participantes registrados</Text>
-      </View>
-    )}
+      {/* Participantes o mensaje vacío */}
+      {participants.length > 0 ? (
+        participants.slice(0, 3).map(participant => (
+          <ParticipantItem 
+            key={participant.id} 
+            participant={participant} 
+          />
+        ))
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No hay participantes registrados</Text>
+        </View>
+      )}
 
-    <TouchableOpacity 
-      style={styles.viewAllButton}
-      onPress={() => navigation.navigate("ParticipantList", { id: event_id })}
-    >
-      <Text style={styles.viewAllText}>Ver todos</Text>
-    </TouchableOpacity>
-
+      {/* Siempre muestra Ver Todos */}
+      <TouchableOpacity 
+        style={styles.viewAllButton}
+        onPress={() => navigation.navigate("ParticipantList", { id: event_id })}
+      >
+        <Text style={styles.viewAllText}>Ver todos</Text>
+      </TouchableOpacity>
     </>
   );
 };

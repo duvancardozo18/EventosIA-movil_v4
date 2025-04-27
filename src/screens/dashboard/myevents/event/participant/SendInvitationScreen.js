@@ -7,6 +7,7 @@ import Icon from "react-native-vector-icons/Feather"
 import { useEvent } from "../../../../../contexts/EventContext"
 import { colors } from "../../../../../styles/colors"
 import { invitationService } from "../../../../../services/api"
+import { useAuth } from '../../../../../contexts/AuthContext';
 
 export default function SendInvitationScreen() {
   const navigation = useNavigation()
@@ -18,6 +19,7 @@ export default function SendInvitationScreen() {
     last_name: "",
     email: "",
   })
+  const { user } = useAuth()
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({
@@ -34,12 +36,14 @@ export default function SendInvitationScreen() {
   
     try {
       const success = await invitationService.sendInvitation({
-        event_id: id,
+        id_event: id,
         email: formData.email,
         name: formData.name,
         last_name: formData.last_name,
-        participant_status_id: 1,
+        id_user: user.id_user
       });
+
+      console.log("Invitación enviada:", success);
   
       if (success) {
         navigation.navigate("InvitationSent", { id });

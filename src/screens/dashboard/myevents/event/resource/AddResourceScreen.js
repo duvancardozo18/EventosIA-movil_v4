@@ -1,223 +1,175 @@
-"use client"
+"use client";
 
-import { useState, useContext } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { ResourceContext } from "../../../../../contexts/ResourceContext"
-import { Feather } from "@expo/vector-icons"
-import { colors } from "../../../../../styles/colors"
+import { useState } from "react";
+import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useResource } from "../../../../../contexts/ResourceContext";
+import { Feather } from "@expo/vector-icons";
+import Button from "../../../../../components/Button";
+import Input from "../../../../../components/Input"; // Tu componente Input
+import { colors } from "../../../../../styles/colors";
+import { useEvent } from "../../../../../contexts/EventContext";
 
 const AddResourceScreen = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { eventId } = route.params
-  const { addResource } = useContext()
+  const navigation = useNavigation();
+  const route = useRoute();
+  const  eventId  = route.params;
+  const { createResource } = useResource();
+  const { assignResourceToEvent } = useEvent(); // Asegúrate de que tienes esta función en tu contexto
 
-  const [resourceData, setResourceData] = useState({
-    name: "",
-    quantity: "",
-    cost: "",
-    notes: "",
-  })
-
-  const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState({})
+  const [resourceData, setResourceData] = useState({ 
+    name: "", 
+    description: "", 
+    quantity: "", 
+    unitValue: "" 
+  });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (name, value) => {
-    setResourceData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setResourceData(prev => ({ ...prev, [name]: value }));
 
-    // Clear error when user types
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: null,
-      }))
+      setErrors(prev => ({ ...prev, [name]: null }));
     }
-  }
+  };
+
 
   const validateForm = () => {
-    const newErrors = {}
-
-    if (!resourceData.name.trim()) {
-      newErrors.name = "El nombre es requerido"
-    }
-
-    if (!resourceData.quantity.trim()) {
-      newErrors.quantity = "La cantidad es requerida"
-    } else if (isNaN(Number(resourceData.quantity)) || Number(resourceData.quantity) <= 0) {
-      newErrors.quantity = "Debe ser un número mayor a 0"
-    }
-
-    if (!resourceData.cost.trim()) {
-      newErrors.cost = "El costo es requerido"
-    } else if (isNaN(Number(resourceData.cost)) || Number(resourceData.cost) < 0) {
-      newErrors.cost = "Debe ser un número válido"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    const newErrors = {};
+    if (!resourceData.name.trim()) newErrors.name = "Campo requerido";
+    if (!resourceData.quantity.trim()) newErrors.quantity = "Campo requerido";
+    if (!resourceData.unitValue.trim()) newErrors.unitValue = "Campo requerido";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return
-
-    setLoading(true)
+    if (!validateForm()) return;
+  
+    setLoading(true);
     try {
-      // Format data for API
-      const formattedData = {
-        ...resourceData,
+      // 1. Crear recurso
+      const newResource = await createResource({
+        name: resourceData.name,
+        description: resourceData.description,
         quantity: Number(resourceData.quantity),
-        cost: Number(resourceData.cost),
+        unitValue: Number(resourceData.unitValue),
+      });
+      
+      // Verifica la estructura del objeto newResource para identificar el ID correcto
+      const resourceId = newResource.id_resource || newResource.id || newResource._id;
+      
+      if (!resourceId) {
+        throw new Error("No se pudo obtener el ID del recurso creado");
       }
-
-      await addResource(eventId, formattedData)
-      navigation.navigate("ResourceCreatedScreen", { eventId })
+      
+      // Convertir explícitamente a números para evitar problemas de tipo
+      const eventIdNum = parseInt(eventId.id);
+      const resourceIdNum = parseInt(resourceId);
+      
+      if (isNaN(eventIdNum) || isNaN(resourceIdNum)) {
+        throw new Error(`ID inválido: evento=${eventId}, recurso=${resourceId}`);
+      }
+      
+      const newEventResource = await assignResourceToEvent({
+        id_event: eventIdNum,
+        id_resource: resourceIdNum
+      });
+      
+      // En lugar de mostrar Alert y volver, navegamos a la pantalla de éxito
+      navigation.navigate("ResourceCreated", eventId);
     } catch (error) {
-      Alert.alert("Error", "No se pudo agregar el recurso. Inténtalo de nuevo.", [{ text: "OK" }])
+      console.error("Error creando o asociando recurso:", error);
+      Alert.alert("Error", `No se pudo crear o asignar el recurso: ${error.message}`);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };   
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
+      {/* Botón de regreso */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Feather name="arrow-left" size={24} color={colors.gray[800]} />
         </TouchableOpacity>
-        <Text style={styles.title}>Agregar Recurso</Text>
       </View>
 
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Nombre del Recurso</Text>
-          <TextInput
-            style={[styles.input, errors.name && styles.inputError]}
-            placeholder="Ej: Proyector, Micrófono, etc."
+      {/* Contenido */}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Agregar Recurso</Text>
+
+        <View style={styles.form}>
+          <Input
+            placeholder="Ingrese el nombre del recurso"
             value={resourceData.name}
             onChangeText={(text) => handleChange("name", text)}
+            error={errors.name}
           />
-          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Cantidad</Text>
-          <TextInput
-            style={[styles.input, errors.quantity && styles.inputError]}
-            placeholder="Ej: 1, 2, 3, etc."
+          <Input
+            placeholder="Ingrese una descripción"
+            value={resourceData.description}
+            onChangeText={(text) => handleChange("description", text)}
+            multiline
+            numberOfLines={6}
+          />
+
+          <Input
+            placeholder="Ingrese la cantidad"
             value={resourceData.quantity}
             onChangeText={(text) => handleChange("quantity", text)}
             keyboardType="numeric"
+            error={errors.quantity}
           />
-          {errors.quantity && <Text style={styles.errorText}>{errors.quantity}</Text>}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Costo (MXN)</Text>
-          <TextInput
-            style={[styles.input, errors.cost && styles.inputError]}
-            placeholder="Ej: 500"
-            value={resourceData.cost}
-            onChangeText={(text) => handleChange("cost", text)}
+          <Input
+            placeholder="Ingrese el valor unitario"
+            value={resourceData.unitValue}
+            onChangeText={(text) => handleChange("unitValue", text)}
             keyboardType="numeric"
+            error={errors.unitValue}
           />
-          {errors.cost && <Text style={styles.errorText}>{errors.cost}</Text>}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Notas (Opcional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Detalles adicionales sobre el recurso"
-            value={resourceData.notes}
-            onChangeText={(text) => handleChange("notes", text)}
-            multiline
-            numberOfLines={4}
+          <Button
+            title="CREAR RECURSO"
+            onPress={handleSubmit}
+            loading={loading}
+            marginTop={24}
           />
         </View>
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? "Guardando..." : "Guardar Recurso"}</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  )
-}
+      </ScrollView>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#f9fafb",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: 0,
   },
-  backButton: {
-    marginRight: 16,
+  content: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.gray[800],
+    marginBottom: 32,
+    textAlign: "center",
   },
-  formContainer: {
-    padding: 16,
+  form: {
+    width: "100%",
+    gap: 16,
   },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: colors.text,
-  },
-  input: {
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    fontSize: 16,
-  },
-  inputError: {
-    borderColor: colors.error,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: 14,
-    marginTop: 4,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.disabled,
-  },
-  buttonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-})
+});
 
-export default AddResourceScreen
-
+export default AddResourceScreen;
