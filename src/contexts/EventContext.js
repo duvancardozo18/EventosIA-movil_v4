@@ -119,11 +119,11 @@ export const EventProvider = ({ children }) => {
     }
   }
 
-  const assignFoodToEvent = async (eventId, foodId) => {
+  const assignFoodToEvent = async (data) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await foodService.assignFoodToEvent({ id_event: eventId, id_food: foodId })
+      const response = await foodService.assignFoodToEvent(data)
       return response.data
     } catch (err) {
       setError(err.response?.data?.message || "Error al asignar alimento al evento")

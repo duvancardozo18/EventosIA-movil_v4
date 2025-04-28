@@ -7,13 +7,14 @@ const ResourceDeletedScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
   const { eventId } = route.params
+  console.log("Event ID received:", eventId)
 
   const handleViewResources = () => {
-    navigation.navigate("ResourceListScreen", { eventId })
+    navigation.navigate("ResourceList", {eventId: eventId}) // Aquí se pasa un objeto
   }
 
   const handleBackToEvent = () => {
-    navigation.navigate("EventDetailScreen", { eventId })
+    navigation.navigate("EventDetail", { eventId: eventId }) // Corregido para enviar un objeto con la propiedad eventId
   }
 
   return (
@@ -98,4 +99,3 @@ const styles = StyleSheet.create({
 })
 
 export default ResourceDeletedScreen
-
