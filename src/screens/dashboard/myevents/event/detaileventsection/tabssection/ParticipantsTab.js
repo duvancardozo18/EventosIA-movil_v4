@@ -75,16 +75,20 @@ const ParticipantItem = ({ participant }) => {
   return (
     <View style={styles.participantContainer}>
       <View style={styles.participantInfo}>
-        <Image source={{ uri: participant.avatar || "https://via.placeholder.com/48" }} style={styles.avatarImage} />
+        <Icon name="user" size={40} color="#B0B0B0" />
         <View style={styles.participantText}>
-          <Text style={styles.participantName}>{participant.user_name || "Usuario"}</Text>
+          <Text style={styles.participantName}>
+            {participant.user_name || "Usuario"} {participant.user_last_name}
+            </Text>
+             <Text style={styles.participantEmail}>{participant.email || "Sin correo"}</Text>
         </View>
+        
       </View>
       
       <View style={styles.participantActions}>
         <View style={[styles.statusTag, isConfirmed ? styles.confirmedTag : styles.invitedTag]}>
-          <Text style={[styles.statusTagText, isConfirmed ? styles.confirmedTagText : styles.invitedTagText]}>
-            {isConfirmed ? "Confirmado" : "Invitado"}
+         <Text style={[styles.statusTagText,participant.participant_status_id === 2 ? styles.confirmedTagText : styles.invitedTagText,]}>
+          {participant.status_name}
           </Text>
         </View>
       </View>
@@ -162,9 +166,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   participantActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+   
   },
   avatarImage: {
     width: 48,

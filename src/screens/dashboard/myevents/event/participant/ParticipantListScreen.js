@@ -48,9 +48,11 @@ export default function ParticipantListScreen() {
     try {
       setDeletingParticipant(true);
       const success = await deleteParticipant(user.id_user, { id_participants: participantId });
-
+  
       if (success) {
-        navigation.navigate("InvitationDeleted", { eventId: id });
+        // Recargar los participantes en lugar de navegar
+        const updatedParticipants = await fetchEventParticipants(id);
+        setParticipants(Array.isArray(updatedParticipants) ? updatedParticipants : []);
       } else {
         Alert.alert("Error", "No se pudo eliminar el participante");
       }
@@ -72,23 +74,29 @@ export default function ParticipantListScreen() {
     <View style={styles.participantItem}>
       <View style={styles.participantInfo}>
         <View style={styles.avatar}>
-          <Image source={{ uri: "https://via.placeholder.com/48" }} style={styles.avatarImage} />
+          <Icon name="user" size={40} color="#B0B0B0" />
         </View>
-        <View>
-          <Text style={styles.participantName}>{item.user_name || "Usuario"}</Text>
+  
+        <View style={styles.participantDetails}>
+          <Text style={styles.participantName}>
+            {item.user_name || "Usuario"} {item.user_last_name}
+          </Text>
           <Text style={styles.participantEmail}>{item.email || "Sin correo"}</Text>
-        </View>
-      </View>
-
-      <View style={styles.participantActions}>
-        <View style={[styles.statusTag, item.participant_status_id === 2 ? styles.confirmedTag : styles.invitedTag]}>
-          <Text style={[
+          <View style={[
+            styles.statusTag, 
+            item.participant_status_id === 2 ? styles.confirmedTag : styles.invitedTag
+          ]}>
+            <Text style={[
               styles.statusTagText,
               item.participant_status_id === 2 ? styles.confirmedTagText : styles.invitedTagText,
             ]}>
-            {item.participant_status_id === 1 ? "Invitado" : item.participant_status_id === 2 ? "Confirmado" : "Desconocido"}
-          </Text>
+              {item.status_name}
+            </Text>
+          </View>
         </View>
+      </View>
+  
+      <View style={styles.participantActions}>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteParticipant(item.id_participants)}
@@ -98,7 +106,6 @@ export default function ParticipantListScreen() {
       </View>
     </View>
   );
-
   if (loading && !deletingParticipant) {
     return (
       <View style={styles.loadingContainer}>
@@ -167,6 +174,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
+    marginTop: 30,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[200],
   },
@@ -228,7 +236,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 9,
+    paddingBottom: 9, 
+    borderBottomWidth: 1, 
+    borderBottomColor: colors.gray[200], 
   },
   participantInfo: {
     flexDirection: "row",
@@ -241,28 +252,33 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginRight: 12,
     backgroundColor: colors.gray[200],
+    alignItems: "center",
   },
   avatarImage: {
     width: "100%",
     height: "100%",
   },
   participantName: {
-    fontWeight: "500",
+    fontWeight: "700",
+    fontSize: 16,
   },
   participantEmail: {
     color: colors.gray[500],
-    fontSize: 14,
-  },
+    fontSize: 15,
+    width: 250,        
+  },  
   participantActions: {
     flexDirection: "row",
     alignItems: "center",
   },
+  
   statusTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 8,
-  },
+    paddingHorizontal: 12,  // Más reducido
+    paddingVertical: 6,    // Más reducido
+    borderRadius: 3,       // Más reducido
+    marginTop: 12,
+    alignSelf: 'flex-start',
+},
   confirmedTag: {
     backgroundColor: colors.indigo[500],
   },
@@ -270,7 +286,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[100],
   },
   statusTagText: {
-    fontSize: 12,
+    fontSize: 15,  // Aumentado de 12 (o 11 si lo habías reducido antes)
+    lineHeight: 18, // Ajustado para evitar corte de texto
   },
   confirmedTagText: {
     color: "white",
