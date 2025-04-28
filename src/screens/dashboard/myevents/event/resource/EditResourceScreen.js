@@ -1,270 +1,201 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useContext } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { ResourceContext } from "../../../../../contexts/ResourceContext"
-import { Feather } from "@expo/vector-icons"
-import { colors } from "../../../../../styles/colors"
+import { useState, useEffect } from "react";
+import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useResource } from "../../../../../contexts/ResourceContext";
+import { Feather } from "@expo/vector-icons";
+import Button from "../../../../../components/Button";
+import Input from "../../../../../components/Input"; // Tu componente Input
+import { colors } from "../../../../../styles/colors";
 
 const EditResourceScreen = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { eventId, resourceId } = route.params
-  const { getResourceById, updateResource } = useContext()
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { eventId, resourceId } = route.params;  // Recibimos los parámetros de la ruta.
+  const { fetchResource, updateResource } = useResource(); // Usamos la función para obtener y actualizar recursos
 
   const [resourceData, setResourceData] = useState({
-    name: "",
-    quantity: "",
-    cost: "",
-    notes: "",
-  })
-
-  const [loading, setLoading] = useState(false)
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [errors, setErrors] = useState({})
+    name: "", 
+    description: "", 
+    quantity: "", 
+    unitValue: "" 
+  });
+  const [initialResourceData, setInitialResourceData] = useState({});  // Guardamos los datos iniciales
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    loadResourceData()
-  }, [resourceId])
+    loadResourceData();
+  }, [resourceId]); // Cargar datos cuando el resourceId cambie
 
+  // Cargar los datos del recurso
   const loadResourceData = async () => {
-    setInitialLoading(true)
+    setLoading(true);
     try {
-      const resource = await getResourceById(eventId, resourceId)
+      const resource = await fetchResource(resourceId);
       setResourceData({
-        name: resource.name,
-        quantity: resource.quantity.toString(),
-        cost: resource.cost.toString(),
-        notes: resource.notes || "",
-      })
-    } catch (error) {
-      Alert.alert("Error", "No se pudo cargar la información del recurso. Inténtalo de nuevo.", [
-        {
-          text: "OK",
-          onPress: () => navigation.goBack(),
-        },
-      ])
-    } finally {
-      setInitialLoading(false)
-    }
-  }
+        name: resource.name || "",
+        description: resource.description || "",
+        quantity: resource.quantity_available?.toString() || "",
+        unitValue: resource.price?.toString() || "",
+      });
 
+      // Guardamos los datos iniciales para comparar después
+      setInitialResourceData({
+        name: resource.name || "",
+        description: resource.description || "",
+        quantity: resource.quantity_available?.toString() || "",
+        unitValue: resource.price?.toString() || "",
+      });
+    } catch (error) {
+      Alert.alert("Error", "No se pudo cargar la información del recurso. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Manejo de cambios en los inputs
   const handleChange = (name, value) => {
-    setResourceData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setResourceData(prev => ({ ...prev, [name]: value }));
 
-    // Clear error when user types
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: null,
-      }))
+      setErrors(prev => ({ ...prev, [name]: null }));
     }
-  }
+  };
 
+  // Validación del formulario
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors = {};
+    if (!resourceData.name.trim()) newErrors.name = "Campo requerido";
+    if (!resourceData.quantity.trim()) newErrors.quantity = "Campo requerido";
+    if (!resourceData.unitValue.trim()) newErrors.unitValue = "Campo requerido";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (!resourceData.name.trim()) {
-      newErrors.name = "El nombre es requerido"
-    }
-
-    if (!resourceData.quantity.trim()) {
-      newErrors.quantity = "La cantidad es requerida"
-    } else if (isNaN(Number(resourceData.quantity)) || Number(resourceData.quantity) <= 0) {
-      newErrors.quantity = "Debe ser un número mayor a 0"
-    }
-
-    if (!resourceData.cost.trim()) {
-      newErrors.cost = "El costo es requerido"
-    } else if (isNaN(Number(resourceData.cost)) || Number(resourceData.cost) < 0) {
-      newErrors.cost = "Debe ser un número válido"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return
-
-    setLoading(true)
-    try {
-      // Format data for API
-      const formattedData = {
-        ...resourceData,
-        quantity: Number(resourceData.quantity),
-        cost: Number(resourceData.cost),
-      }
-
-      await updateResource(eventId, resourceId, formattedData)
-      navigation.navigate("ResourceListScreen", { eventId })
-    } catch (error) {
-      Alert.alert("Error", "No se pudo actualizar el recurso. Inténtalo de nuevo.", [{ text: "OK" }])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (initialLoading) {
+  // Verificar si hay cambios
+  const hasChanges = () => {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando información del recurso...</Text>
-      </View>
-    )
-  }
+      resourceData.name !== initialResourceData.name ||
+      resourceData.description !== initialResourceData.description ||
+      resourceData.quantity !== initialResourceData.quantity ||
+      resourceData.unitValue !== initialResourceData.unitValue
+    );
+  };
+
+  // Enviar el formulario para actualizar el recurso
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    if (!hasChanges()) {
+      Alert.alert("No hay cambios", "No se ha realizado ninguna modificación en los campos.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updatedResource = await updateResource(resourceId, {
+        name: resourceData.name,
+        description: resourceData.description,
+        quantity_available: Number(resourceData.quantity),
+        price: Number(resourceData.unitValue),
+      });
+
+      if (!updatedResource) {
+        throw new Error("No se pudo actualizar el recurso");} 
+      else {       // Navegar de vuelta al listado de recursos o pantalla anterior
+        navigation.navigate("ResourceCreated", eventId );}
+    } catch (error) {
+      Alert.alert("Error", "No se pudo actualizar el recurso. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
+      {/* Botón de regreso */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Feather name="arrow-left" size={24} color={colors.gray[800]} />
         </TouchableOpacity>
-        <Text style={styles.title}>Editar Recurso</Text>
       </View>
 
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Nombre del Recurso</Text>
-          <TextInput
-            style={[styles.input, errors.name && styles.inputError]}
-            placeholder="Ej: Proyector, Micrófono, etc."
+      {/* Contenido */}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Editar Recurso</Text>
+
+        <View style={styles.form}>
+          <Input
+            placeholder="Ingrese el nombre del recurso"
             value={resourceData.name}
             onChangeText={(text) => handleChange("name", text)}
+            error={errors.name}
           />
-          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Cantidad</Text>
-          <TextInput
-            style={[styles.input, errors.quantity && styles.inputError]}
-            placeholder="Ej: 1, 2, 3, etc."
+          <Input
+            placeholder="Ingrese una descripción"
+            value={resourceData.description}
+            onChangeText={(text) => handleChange("description", text)}
+            multiline
+            numberOfLines={6}
+          />
+
+          <Input
+            placeholder="Ingrese la cantidad"
             value={resourceData.quantity}
             onChangeText={(text) => handleChange("quantity", text)}
             keyboardType="numeric"
+            error={errors.quantity}
           />
-          {errors.quantity && <Text style={styles.errorText}>{errors.quantity}</Text>}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Costo (MXN)</Text>
-          <TextInput
-            style={[styles.input, errors.cost && styles.inputError]}
-            placeholder="Ej: 500"
-            value={resourceData.cost}
-            onChangeText={(text) => handleChange("cost", text)}
+          <Input
+            placeholder="Ingrese el valor unitario"
+            value={resourceData.unitValue}
+            onChangeText={(text) => handleChange("unitValue", text)}
             keyboardType="numeric"
+            error={errors.unitValue}
           />
-          {errors.cost && <Text style={styles.errorText}>{errors.cost}</Text>}
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Notas (Opcional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Detalles adicionales sobre el recurso"
-            value={resourceData.notes}
-            onChangeText={(text) => handleChange("notes", text)}
-            multiline
-            numberOfLines={4}
+          <Button
+            title="GUARDAR CAMBIOS"
+            onPress={handleSubmit}
+            loading={loading}
+            marginTop={24}
           />
         </View>
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? "Guardando..." : "Guardar Cambios"}</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  )
-}
+      </ScrollView>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: colors.textSecondary,
+    backgroundColor: "#f9fafb",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: 0,
   },
-  backButton: {
-    marginRight: 16,
+  content: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.gray[800],
+    marginBottom: 32,
+    textAlign: "center",
   },
-  formContainer: {
-    padding: 16,
+  form: {
+    width: "100%",
+    gap: 16,
   },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: colors.text,
-  },
-  input: {
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    fontSize: 16,
-  },
-  inputError: {
-    borderColor: colors.error,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: 14,
-    marginTop: 4,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.disabled,
-  },
-  buttonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-})
+});
 
-export default EditResourceScreen
-
+export default EditResourceScreen;

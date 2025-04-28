@@ -6,20 +6,25 @@ import { colors } from "../../../../../styles/colors"
 const ResourceCreatedScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
-  const {eventId}  = route.params
+  const eventId = route.params
 
   console.log("Event ID received:", eventId)
 
   const handleViewResources = () => {
-    navigation.navigate("ResourceList", { eventId })
+    // Crear un objeto de evento con la estructura esperada por ResourceListScreen
+    const eventParam = {
+      event_id: eventId
+    }
+    navigation.navigate("ResourceList", eventParam)
   }
 
   const handleAddAnother = () => {
-    navigation.navigate("AddResource", { eventId })
+    navigation.navigate("AddResource", eventId)
   }
 
   const handleBackToEvent = () => {
-    navigation.navigate("EventDetail", { eventId })
+    navigation.navigate("EventDetail", eventId)
+    console.log("Navigating back to EventDetail with ID:", eventId)
   }
 
   return (

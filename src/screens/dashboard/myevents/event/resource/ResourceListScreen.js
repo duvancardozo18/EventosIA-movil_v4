@@ -1,50 +1,58 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { Feather } from "@expo/vector-icons"
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Feather } from "@expo/vector-icons";
 import { useResource } from "../../../../../contexts/ResourceContext";
 import { useEvent } from "../../../../../contexts/EventContext";
-import { colors } from "../../../../../styles/colors"
+import { colors } from "../../../../../styles/colors";
 
 const ResourceListScreen = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { eventId } = route.params
-  const { getResourcesByEvent, deleteEventResource } = useResource();
-  const { getEventResources } = useEvent();
+  const navigation = useNavigation();
+  const route = useRoute();
+  const event = route.params;
+  const { getResourcesByEvent } = useResource();
+  const { fetchEventResources, removeResourceFromEvent } = useEvent();
+  console.log("Event ID:", event);
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);  // Estado para manejar el proceso de eliminación
+  const [error, setError] = useState(null);
 
-  const [resources, setResources] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const eventId = event.event_id;
 
   useEffect(() => {
-    loadResources()
-  }, [eventId])
+    loadResources();
+
+    // Agregar un listener para cuando la pantalla vuelva a estar en foco
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadResources();
+    });
+
+    // Limpiar el listener cuando el componente se desmonte
+    return unsubscribe;
+  }, [eventId, navigation]);
 
   const loadResources = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      // Asumiendo que getEventResources devuelve los recursos asociados a un evento
-      const resourceData = await getEventResources(eventId)
-      setResources(resourceData)
-      setError(null)
+      const resourceData = await fetchEventResources(eventId);
+      setResources(resourceData);
+      setError(null);
     } catch (err) {
-      setError("No se pudieron cargar los recursos. Por favor, intenta de nuevo.")
-      console.error("Error loading resources:", err)
+      setError("No se pudieron cargar los recursos. Por favor, intenta de nuevo.");
+      console.error("Error loading resources:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleAddResource = () => {
-    navigation.navigate("AddResourceScreen", { eventId })
-  }
+    navigation.navigate("AddResource", eventId);
+  };
 
   const handleEditResource = (resourceId) => {
-    navigation.navigate("EditResourceScreen", { eventId, resourceId })
-  }
+    navigation.navigate("EditResource", { eventId, resourceId });
+  };
 
   const handleDeleteResource = (resourceId) => {
     Alert.alert(
@@ -56,26 +64,34 @@ const ResourceListScreen = () => {
           text: "Eliminar",
           style: "destructive",
           onPress: async () => {
+            setIsDeleting(true); // Establecer el estado de eliminación en true
             try {
-              await deleteEventResource(eventId, resourceId)
-              // Refresh the list after deletion
-              loadResources()
+              // Elimina el recurso
+              await removeResourceFromEvent(eventId, resourceId);
+
+              // Actualiza los recursos de inmediato antes de navegar
+              await loadResources();  // Llamar para actualizar la lista de recursos
+
+              // Navegar a la pantalla de "Recurso Eliminado"
+              navigation.navigate("ResourceDeleted", { eventId });
             } catch (err) {
-              Alert.alert("Error", "No se pudo eliminar el recurso. Inténtalo de nuevo.")
+              Alert.alert("Error", "No se pudo eliminar el recurso. Inténtalo de nuevo.");
+            } finally {
+              setIsDeleting(false); // Establecer el estado de eliminación en false
             }
           },
         },
-      ],
-    )
-  }
+      ]
+    );
+  };
 
   const renderResourceItem = ({ item }) => (
     <View style={styles.resourceCard}>
       <View style={styles.resourceInfo}>
         <Text style={styles.resourceName}>{item.name}</Text>
-        <Text style={styles.resourceDetail}>Cantidad: {item.quantity}</Text>
-        <Text style={styles.resourceDetail}>Valor Unitario: ${item.unitValue}</Text>
-        <Text style={styles.resourceDetail}>Costo Total: ${item.quantity * item.unitValue}</Text>
+        <Text style={styles.resourceDetail}>Cantidad: {item.quantity_available}</Text>
+        <Text style={styles.resourceDetail}>Valor Unitario: ${item.price}</Text>
+        <Text style={styles.resourceDetail}>Costo Total: ${item.quantity_available * item.price}</Text>
         {item.description && <Text style={styles.resourceNotes}>{item.description}</Text>}
       </View>
 
@@ -89,7 +105,7 @@ const ResourceListScreen = () => {
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 
   return (
     <View style={styles.container}>
@@ -105,7 +121,7 @@ const ResourceListScreen = () => {
         <Text style={styles.addButtonText}>Agregar Recurso</Text>
       </TouchableOpacity>
 
-      {loading ? (
+      {loading || isDeleting ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Cargando recursos...</Text>
@@ -134,8 +150,8 @@ const ResourceListScreen = () => {
         />
       )}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -264,6 +280,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     maxWidth: "80%",
   },
-})
+});
 
-export default ResourceListScreen
+export default ResourceListScreen;

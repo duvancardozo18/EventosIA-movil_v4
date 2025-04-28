@@ -7,13 +7,18 @@ const ResourceDeletedScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
   const { eventId } = route.params
+  console.log("Event ID received:", eventId)
+
+  const eventParam = {
+    event_id: eventId
+  }
 
   const handleViewResources = () => {
-    navigation.navigate("ResourceListScreen", { eventId })
+    navigation.navigate("ResourceList", eventParam)
   }
 
   const handleBackToEvent = () => {
-    navigation.navigate("EventDetailScreen", { eventId })
+    navigation.navigate("EventDetail", eventId)
   }
 
   return (

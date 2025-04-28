@@ -13,7 +13,8 @@ import { useEvent } from "../../../../../contexts/EventContext";
 const AddResourceScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const  eventId  = route.params;
+  const eventId   = route.params;
+  console.log("Event ID received:", eventId); // Verifica que recibes el ID correctamente
   const { createResource } = useResource();
   const { assignResourceToEvent } = useEvent(); // Asegúrate de que tienes esta función en tu contexto
 
@@ -53,8 +54,8 @@ const AddResourceScreen = () => {
       const newResource = await createResource({
         name: resourceData.name,
         description: resourceData.description,
-        quantity: Number(resourceData.quantity),
-        unitValue: Number(resourceData.unitValue),
+        quantity_available: Number(resourceData.quantity),
+        price: Number(resourceData.unitValue),
       });
       
       // Verifica la estructura del objeto newResource para identificar el ID correcto
@@ -65,7 +66,8 @@ const AddResourceScreen = () => {
       }
       
       // Convertir explícitamente a números para evitar problemas de tipo
-      const eventIdNum = parseInt(eventId.id);
+      const eventIdNum = parseInt(eventId);
+      console.log("Event ID:", eventIdNum);
       const resourceIdNum = parseInt(resourceId);
       
       if (isNaN(eventIdNum) || isNaN(resourceIdNum)) {

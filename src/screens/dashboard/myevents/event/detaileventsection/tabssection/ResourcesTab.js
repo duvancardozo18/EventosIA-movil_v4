@@ -1,86 +1,140 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 import DetailsButton from '../../../../../../components/DetailsButtton';
+import ResourceCard from '../../resource/ResourceCard';
+import { useEvent } from '../../../../../../contexts/EventContext';
+import { useFocusEffect } from '@react-navigation/native';
 
-const ResourcesTab = ({ resources, loading, event_id, navigation }) => {
+const ResourcesTab = ({ navigation, event_id }) => {
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const { fetchEventResources } = useEvent();
+
+  console.log("Event ID in ResourcesTab:", event_id);
+
+  // Función para cargar los recursos
+  const loadResources = async () => {
+    setLoading(true);
+    try {
+      const resourceData = await fetchEventResources(event_id);
+      console.log("Fetched Resources:", resourceData);
+      setResources(resourceData);
+      console.log("Updated Resources State:", resourceData);
+      setError(null);
+    } catch (err) {
+      setError("No se pudieron cargar los recursos. Por favor, intenta de nuevo.");
+      console.error("Error loading resources:", err);
+    } finally {
+      setLoading(false);
+    }
+  };  
+
+  // Cargar recursos cuando el componente se monta inicialmente
+  useEffect(() => {
+    loadResources();
+  }, [event_id]);
+
+  // Recargar recursos cada vez que la pantalla obtiene el foco
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("ResourcesTab recibió el foco - recargando recursos...");
+      loadResources();
+      return () => {
+        // Cleanup function cuando pierde el foco (opcional)
+        console.log("ResourcesTab perdió el foco");
+      };
+    }, [event_id])
+  );
+
   const handleAddPress = () => {
-    navigation.navigate("AddResource", { id: event_id });
+    navigation.navigate("AddResource", event_id ); // Corregido para pasar event_id como objeto
   };
-  
+
   const handleViewDetails = (item) => {
     navigation.navigate("ResourceDetail", { id: item.id, event_id });
   };
 
   if (loading) {
-    return <Text style={styles.loadingText}>Cargando recursos...</Text>;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Cargando recursos...</Text>
+      </View>
+    );
   }
-  
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <AddButton onPress={handleAddPress} />
+      </View>
+    );
+  }
+
   if (resources.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>No hay recursos asignados</Text>
         <AddButton onPress={handleAddPress} />
-      </View>
-    );
-  }
-  
-  return (
-    <>
-      <AddButton onPress={handleAddPress} />
-      
-      {resources.slice(0, 3).map(item => (
-        <SummaryItem
-          key={item.id}
-          item={item}
-          isResource={true}
-          onViewDetails={() => handleViewDetails(item)}
-        />
-      ))}
-
-      {resources.length > 3 && (
         <DetailsButton 
           onPress={() => navigation.navigate("ResourceList", { event_id: event_id })} 
           text="Ver todos los recursos" 
         />
-      )}
-    </>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <AddButton onPress={handleAddPress} />
+
+      {resources.slice(0, 3).map(item => (
+        <ResourceCard
+          key={item.id}
+          item={item}
+          onViewDetails={() => handleViewDetails(item)}
+        />
+      ))}
+
+      <DetailsButton 
+        onPress={() => navigation.navigate("ResourceList", { event_id: event_id })} 
+        text="Ver todos los recursos" 
+      />
+    </View>
   );
 };
 
-// Componente para mostrar recursos
-const SummaryItem = ({ item, isResource = true, onViewDetails }) => (
-  <View style={styles.itemContainer}>
-    <View style={styles.itemHeader}>
-      <Text style={styles.itemName}>{item.name}</Text>
-      <Text style={styles.itemPrice}>${item.price}</Text>
-    </View>
-    
-    <View style={styles.itemMeta}>
-      <View style={styles.quantityContainer}>
-        <View style={styles.quantityDot}>
-          <View style={styles.quantityDotInner} />
-        </View>
-        <Text style={styles.quantityText}>{item.quantity_available} unidades</Text>
-      </View>
-      <DetailsButton onPress={onViewDetails} />
-    </View>
-    
-    {item.description && (
-      <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">
-        {item.description}
-      </Text>
-    )}
-  </View>
-);
-
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingText: {
     textAlign: 'center',
     fontSize: 16,
     color: colors.gray[500],
     marginTop: 20,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  errorText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: colors.error,
+    marginBottom: 20,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -92,62 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.gray[500],
     marginBottom: 20,
-  },
-  itemContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  itemName: {
-    fontWeight: '600',
-    color: colors.gray[800],
-    fontSize: 16,
-  },
-  itemPrice: {
-    fontWeight: '600',
-    color: colors.indigo[500],
-    fontSize: 16,
-  },
-  itemMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  quantityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.indigo[100],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantityDotInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.indigo[500],
-  },
-  quantityText: {
-    color: colors.gray[600],
-    fontSize: 14,
-  },
-  itemDescription: {
-    color: colors.gray[700],
-    fontSize: 14,
-    lineHeight: 20,
-  },
+  }
 });
 
 export default ResourcesTab;
