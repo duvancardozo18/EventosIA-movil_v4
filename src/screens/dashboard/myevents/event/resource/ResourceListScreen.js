@@ -5,30 +5,24 @@ import { Feather } from "@expo/vector-icons";
 import { useResource } from "../../../../../contexts/ResourceContext";
 import { useEvent } from "../../../../../contexts/EventContext";
 import { colors } from "../../../../../styles/colors";
+import CardList from "../../../../../components/CardList";// Asegúrate de ajustar el path al componente ResourceCard
 
 const ResourceListScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const event = route.params;
-  const { getResourcesByEvent } = useResource();
+  const { eventId } = route.params;
   const { fetchEventResources, removeResourceFromEvent } = useEvent();
-  console.log("Event ID:", event);
+
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);  // Estado para manejar el proceso de eliminación
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
-
-  const eventId = event.event_id;
 
   useEffect(() => {
     loadResources();
-
-    // Agregar un listener para cuando la pantalla vuelva a estar en foco
     const unsubscribe = navigation.addListener('focus', () => {
       loadResources();
     });
-
-    // Limpiar el listener cuando el componente se desmonte
     return unsubscribe;
   }, [eventId, navigation]);
 
@@ -40,14 +34,13 @@ const ResourceListScreen = () => {
       setError(null);
     } catch (err) {
       setError("No se pudieron cargar los recursos. Por favor, intenta de nuevo.");
-      console.error("Error loading resources:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddResource = () => {
-    navigation.navigate("AddResource", eventId);
+    navigation.navigate("AddResource", { eventId });
   };
 
   const handleEditResource = (resourceId) => {
@@ -64,20 +57,15 @@ const ResourceListScreen = () => {
           text: "Eliminar",
           style: "destructive",
           onPress: async () => {
-            setIsDeleting(true); // Establecer el estado de eliminación en true
+            setIsDeleting(true);
             try {
-              // Elimina el recurso
               await removeResourceFromEvent(eventId, resourceId);
-
-              // Actualiza los recursos de inmediato antes de navegar
-              await loadResources();  // Llamar para actualizar la lista de recursos
-
-              // Navegar a la pantalla de "Recurso Eliminado"
+              await loadResources();
               navigation.navigate("ResourceDeleted", { eventId });
             } catch (err) {
               Alert.alert("Error", "No se pudo eliminar el recurso. Inténtalo de nuevo.");
             } finally {
-              setIsDeleting(false); // Establecer el estado de eliminación en false
+              setIsDeleting(false);
             }
           },
         },
@@ -86,26 +74,18 @@ const ResourceListScreen = () => {
   };
 
   const renderResourceItem = ({ item }) => (
-    <View style={styles.resourceCard}>
-      <View style={styles.resourceInfo}>
-        <Text style={styles.resourceName}>{item.name}</Text>
-        <Text style={styles.resourceDetail}>Cantidad: {item.quantity_available}</Text>
-        <Text style={styles.resourceDetail}>Valor Unitario: ${item.price}</Text>
-        <Text style={styles.resourceDetail}>Costo Total: ${item.quantity_available * item.price}</Text>
-        {item.description && <Text style={styles.resourceNotes}>{item.description}</Text>}
-      </View>
-
-      <View style={styles.resourceActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleEditResource(item.id_resource || item.id)}>
-          <Feather name="edit" size={20} color={colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleDeleteResource(item.id_resource || item.id)}>
-          <Feather name="trash-2" size={20} color={colors.error} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    <CardList
+      item={{
+        name: item.name,
+        quantity: item.quantity_available,
+        price: item.price,
+        totalCost: item.quantity_available * item.price,
+        description: item.description || "Sin notas adicionales"
+      }}
+      onEdit={() => handleEditResource(item.id_resource || item.id)}
+      onDelete={() => handleDeleteResource(item.id_resource || item.id)}
+    />
+  );  
 
   return (
     <View style={styles.container}>
@@ -189,44 +169,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-  },
-  resourceCard: {
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  resourceInfo: {
-    flex: 1,
-  },
-  resourceName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  resourceDetail: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  resourceNotes: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 8,
-    fontStyle: "italic",
-  },
-  resourceActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 8,
   },
   loadingContainer: {
     flex: 1,

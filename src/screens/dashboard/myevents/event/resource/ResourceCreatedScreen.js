@@ -1,31 +1,30 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { Feather } from "@expo/vector-icons"
-import { colors } from "../../../../../styles/colors"
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Feather } from "@expo/vector-icons";
+import { colors } from "../../../../../styles/colors";
 
 const ResourceCreatedScreen = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const eventId = route.params
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { eventId } = route.params;  // Obtenemos el parámetro eventId del objeto route.params
 
-  console.log("Event ID received:", eventId)
+  console.log("Event ID received created:", eventId);
 
   const handleViewResources = () => {
-    // Crear un objeto de evento con la estructura esperada por ResourceListScreen
-    const eventParam = {
-      event_id: eventId
-    }
-    navigation.navigate("ResourceList", eventParam)
-  }
+    // Mantener el mismo nombre de parámetro en todas las navegaciones
+    navigation.navigate("ResourceList", { eventId: eventId });
+  };
 
   const handleAddAnother = () => {
-    navigation.navigate("AddResource", eventId)
-  }
+    // Pasar eventId como parte de un objeto, no directamente
+    navigation.navigate("AddResource", { eventId: eventId });
+  };
 
   const handleBackToEvent = () => {
-    navigation.navigate("EventDetail", eventId)
-    console.log("Navigating back to EventDetail with ID:", eventId)
-  }
+    // Pasar eventId como parte de un objeto, no directamente
+    navigation.navigate("EventDetail", { eventId: eventId });
+    console.log("Navigating back to EventDetail with ID:", eventId);
+  };
 
   return (
     <View style={styles.container}>
@@ -33,28 +32,28 @@ const ResourceCreatedScreen = () => {
         <View style={styles.iconContainer}>
           <Feather name="check-circle" size={80} color={colors.success} />
         </View>
-
+        
         <Text style={styles.title}>¡Recurso Agregado!</Text>
-
+        
         <Text style={styles.message}>El recurso ha sido agregado exitosamente al evento.</Text>
-
+        
         <View style={styles.buttonsContainer}>
           <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleViewResources}>
             <Text style={styles.primaryButtonText}>Ver Recursos</Text>
           </TouchableOpacity>
-
+          
           <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleAddAnother}>
             <Text style={styles.secondaryButtonText}>Agregar Otro Recurso</Text>
           </TouchableOpacity>
-
+          
           <TouchableOpacity style={[styles.button, styles.outlineButton]} onPress={handleBackToEvent}>
             <Text style={styles.outlineButtonText}>Volver al Evento</Text>
           </TouchableOpacity>
         </View>
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -118,6 +117,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-})
+});
 
-export default ResourceCreatedScreen
+export default ResourceCreatedScreen;

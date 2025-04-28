@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors } from '../../../../../styles/colors';
+import { colors } from '../styles/colors';
 
-const ResourceCard = ({ item, onViewDetails }) => (
+const Card = ({ item, onViewDetails }) => (
   <TouchableOpacity 
     style={styles.cardContainer} 
     onPress={() => onViewDetails && onViewDetails(item)}
@@ -71,4 +71,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ResourceCard;
+export default Card;

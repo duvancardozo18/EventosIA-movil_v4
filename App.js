@@ -50,6 +50,7 @@ import FoodDeletedScreen from "./src/screens/dashboard/myevents/event/food/FoodD
 import NotificationsScreen from "./src/screens/dashboard/notification/NotificationsScreen";
 import ProfileScreen from "./src/screens/dashboard/profile/ProfileScreen";
 import DetailEventScreen from "./src/screens/dashboard/myevents/event/DetailEventScreen";
+import AddFoodScreen from "./src/screens/dashboard/myevents/event/food/AddFoodScreen";
 
 // Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -98,6 +99,7 @@ export default function App() {
                       <Stack.Screen name="EditResource" component={EditResourceScreen} />
                       <Stack.Screen name="ResourceDeleted" component={ResourceDeletedScreen} />
                       <Stack.Screen name="FoodList" component={FoodListScreen} />
+                      <Stack.Screen name="AddFood" component={AddFoodScreen} />
                       
                       <Stack.Screen name="FoodCreated" component={FoodCreatedScreen} />
                       

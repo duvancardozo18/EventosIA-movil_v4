@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -13,16 +11,20 @@ import { useEvent } from "../../../../../contexts/EventContext";
 const AddResourceScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const eventId   = route.params;
-  console.log("Event ID received:", eventId); // Verifica que recibes el ID correctamente
+  
+  // CORREGIDO: Extraer eventId de forma consistente del objeto params
+  const { eventId } = route.params || {};
+  
+  console.log("Event ID received in AddResourceScreen:", eventId);
+  
   const { createResource } = useResource();
-  const { assignResourceToEvent } = useEvent(); // Asegúrate de que tienes esta función en tu contexto
+  const { assignResourceToEvent } = useEvent();
 
-  const [resourceData, setResourceData] = useState({ 
-    name: "", 
-    description: "", 
-    quantity: "", 
-    unitValue: "" 
+  const [resourceData, setResourceData] = useState({
+    name: "",
+    description: "",
+    quantity: "",
+    unitValue: ""
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -35,7 +37,6 @@ const AddResourceScreen = () => {
     }
   };
 
-
   const validateForm = () => {
     const newErrors = {};
     if (!resourceData.name.trim()) newErrors.name = "Campo requerido";
@@ -47,7 +48,7 @@ const AddResourceScreen = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-  
+
     setLoading(true);
     try {
       // 1. Crear recurso
@@ -57,37 +58,41 @@ const AddResourceScreen = () => {
         quantity_available: Number(resourceData.quantity),
         price: Number(resourceData.unitValue),
       });
-      
+
       // Verifica la estructura del objeto newResource para identificar el ID correcto
       const resourceId = newResource.id_resource || newResource.id || newResource._id;
-      
+
       if (!resourceId) {
         throw new Error("No se pudo obtener el ID del recurso creado");
       }
-      
+
       // Convertir explícitamente a números para evitar problemas de tipo
       const eventIdNum = parseInt(eventId);
       console.log("Event ID:", eventIdNum);
       const resourceIdNum = parseInt(resourceId);
-      
+
       if (isNaN(eventIdNum) || isNaN(resourceIdNum)) {
         throw new Error(`ID inválido: evento=${eventId}, recurso=${resourceId}`);
       }
-      
+
       const newEventResource = await assignResourceToEvent({
         id_event: eventIdNum,
         id_resource: resourceIdNum
       });
-      
-      // En lugar de mostrar Alert y volver, navegamos a la pantalla de éxito
-      navigation.navigate("ResourceCreated", eventId);
+
+      // CORREGIDO: Pasar eventId como parte de un objeto
+      navigation.navigate("ResourceCreated", { eventId });
+
+      // Limpiar los campos después de agregar el recurso
+      setResourceData({ name: "", description: "", quantity: "", unitValue: "" });
+      setErrors({}); // Limpiar los errores
     } catch (error) {
       console.error("Error creando o asociando recurso:", error);
       Alert.alert("Error", `No se pudo crear o asignar el recurso: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  };   
+  };
 
   return (
     <View style={styles.container}>

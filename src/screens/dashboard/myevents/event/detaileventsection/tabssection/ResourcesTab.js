@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 import DetailsButton from '../../../../../../components/DetailsButtton';
-import ResourceCard from '../../resource/ResourceCard';
+import ResourceCard from '../../../../../../components/Card'
 import { useEvent } from '../../../../../../contexts/EventContext';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -51,11 +51,12 @@ const ResourcesTab = ({ navigation, event_id }) => {
   );
 
   const handleAddPress = () => {
-    navigation.navigate("AddResource", event_id ); // Corregido para pasar event_id como objeto
+    // CORREGIDO: Pasar el event_id como objeto con la propiedad "eventId"
+    navigation.navigate("AddResource", { eventId: event_id });
   };
 
   const handleViewDetails = (item) => {
-    navigation.navigate("ResourceDetail", { id: item.id, event_id });
+    navigation.navigate("ResourceDetail", { id: item.id, eventId: event_id });
   };
 
   if (loading) {
@@ -82,7 +83,8 @@ const ResourcesTab = ({ navigation, event_id }) => {
         <Text style={styles.emptyText}>No hay recursos asignados</Text>
         <AddButton onPress={handleAddPress} />
         <DetailsButton 
-          onPress={() => navigation.navigate("ResourceList", { event_id: event_id })} 
+          // CORREGIDO: Utilizar la propiedad "eventId" consistentemente
+          onPress={() => navigation.navigate("ResourceList", { eventId: event_id })} 
           text="Ver todos los recursos" 
         />
       </View>
@@ -102,7 +104,8 @@ const ResourcesTab = ({ navigation, event_id }) => {
       ))}
 
       <DetailsButton 
-        onPress={() => navigation.navigate("ResourceList", { event_id: event_id })} 
+        // CORREGIDO: Utilizar la propiedad "eventId" consistentemente
+        onPress={() => navigation.navigate("ResourceList", { eventId: event_id })} 
         text="Ver todos los recursos" 
       />
     </View>

@@ -1,52 +1,59 @@
 "use client"
 
-import { useEffect, useState, useContext } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { Feather } from "@expo/vector-icons"
-import { FoodContext } from "../../../../../contexts/FoodContext"
-import { colors } from "../../../../../styles/colors"
+import { useEffect, useState, useContext } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Feather } from "@expo/vector-icons";
+import { useFood } from "../../../../../contexts/FoodContext";
+import { useEvent } from "../../../../../contexts/EventContext";
+import { colors } from "../../../../../styles/colors";
+import CardList from '../../../../../components/CardList'; // Aquí importamos la nueva tarjeta genérica
 
 const FoodListScreen = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { eventId } = route.params
-  const { getEventFoods, deleteFood } = useContext()
+  const navigation = useNavigation();
+  const route = useRoute();
+  const event = route.params;
+  console.log("Event ID received:", event); // Verificamos en consola
 
-  const [foods, setFoods] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { deleteFood } = useFood();
+  const { fetchEventFoods } = useEvent();
+  const [foods, setFoods] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const eventId = event.event_id;
+  console.log(eventId); // Asegúrate de que estás usando el ID correcto del evento
 
   useEffect(() => {
-    loadFoods()
-  }, [eventId])
+    loadFoods();
+  }, [eventId]);
 
   const loadFoods = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const foodData = await getEventFoods(eventId)
-      setFoods(foodData)
-      setError(null)
+      const foodData = await fetchEventFoods(eventId);
+      setFoods(foodData);
+      setError(null);
     } catch (err) {
-      setError("No se pudieron cargar los alimentos. Por favor, intenta de nuevo.")
-      console.error("Error loading foods:", err)
+      setError("No se pudieron cargar los alimentos. Por favor, intenta de nuevo.");
+      console.error("Error loading foods:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleAddFood = () => {
-    navigation.navigate("AddFoodScreen", { eventId })
-  }
+    navigation.navigate("AddFood", eventId);
+  };
 
   const handleEditFood = (foodId) => {
-    navigation.navigate("EditFoodScreen", { eventId, foodId })
-  }
+    navigation.navigate("EditFood", { eventId, foodId });
+  };
 
   const handleDeleteFood = (foodId) => {
     Alert.alert(
       "Eliminar Alimento",
-      "¿Estás seguro de que deseas eliminar este alimento? Esta acción no se puede deshacer.",
+      "¿Estás seguro de que deseas eliminar este alimento?",
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -54,40 +61,30 @@ const FoodListScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteFood(eventId, foodId)
-              // Refresh the list after deletion
-              loadFoods()
+              await deleteFood(eventId, foodId);
+              loadFoods();
             } catch (err) {
-              Alert.alert("Error", "No se pudo eliminar el alimento. Inténtalo de nuevo.")
+              Alert.alert("Error", "No se pudo eliminar el alimento.");
             }
           },
         },
-      ],
-    )
-  }
+      ]
+    );
+  };
 
   const renderFoodItem = ({ item }) => (
-    <View style={styles.foodCard}>
-      <View style={styles.foodInfo}>
-        <Text style={styles.foodName}>{item.name}</Text>
-        <Text style={styles.foodDetail}>
-          Cantidad: {item.quantity} {item.unit}
-        </Text>
-        <Text style={styles.foodDetail}>Costo: ${item.cost}</Text>
-        {item.notes && <Text style={styles.foodNotes}>{item.notes}</Text>}
-      </View>
-
-      <View style={styles.foodActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleEditFood(item.id)}>
-          <Feather name="edit" size={20} color={colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleDeleteFood(item.id)}>
-          <Feather name="trash-2" size={20} color={colors.error} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
+    <CardList
+      item={{
+        name: item.name,
+        quantity: `${item.quantity_available} ${item.unit}`,
+        price: item.price,
+        totalCost: item.quantity_available * item.price,
+        description: item.description || "Sin notas adicionales"
+      }}
+      onEdit={() => handleEditFood(item.id_food)}
+      onDelete={() => handleDeleteFood(item.id_food)}
+    />
+  );
 
   return (
     <View style={styles.container}>
@@ -120,21 +117,22 @@ const FoodListScreen = () => {
         <View style={styles.emptyContainer}>
           <Feather name="coffee" size={60} color={colors.textSecondary} />
           <Text style={styles.emptyText}>No hay alimentos agregados</Text>
-          <Text style={styles.emptySubtext}>Agrega alimentos para tu evento como bebidas, platillos, snacks, etc.</Text>
+          <Text style={styles.emptySubtext}>Agrega alimentos para tu evento</Text>
         </View>
       ) : (
         <FlatList
           data={foods}
           renderItem={renderFoodItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id_food.toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
       )}
     </View>
-  )
-}
+  );
+};
 
+// Mantener los mismos estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -171,44 +169,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-  },
-  foodCard: {
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  foodInfo: {
-    flex: 1,
-  },
-  foodName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  foodDetail: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  foodNotes: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 8,
-    fontStyle: "italic",
-  },
-  foodActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -262,7 +222,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     maxWidth: "80%",
   },
-})
+});
 
-export default FoodListScreen
-
+export default FoodListScreen;
