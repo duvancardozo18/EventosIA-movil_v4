@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import { useIsFocused } from '@react-navigation/native'; 
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, TextInput, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
@@ -20,14 +20,17 @@ export default function ParticipantListScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingParticipant, setDeletingParticipant] = useState(false); // Nuevo loading local
 
+  const isFocused = useIsFocused();
+
   useEffect(() => {
-    const loadParticipants = async () => {
-      const data = await fetchEventParticipants(id);
-      setParticipants(Array.isArray(data) ? data : []);
-    };
-  
-    loadParticipants();
-  }, [id]);  
+    if (isFocused) {
+      const loadParticipants = async () => {
+        const data = await fetchEventParticipants(id);
+        setParticipants(Array.isArray(data) ? data : []);
+      };
+      loadParticipants();
+    }
+  }, [isFocused, id]);
 
   const handleDeleteParticipant = (participantId) => {
     Alert.alert(
