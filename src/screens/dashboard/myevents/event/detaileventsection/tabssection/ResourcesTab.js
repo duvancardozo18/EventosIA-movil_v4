@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 import DetailsButton from '../../../../../../components/DetailsButtton';
-import ResourceCard from '../../../../../../components/Card'
+import ResourceCard from '../../../../../../components/Card';
 import { useEvent } from '../../../../../../contexts/EventContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 
 const ResourcesTab = ({ navigation, event_id }) => {
   const [resources, setResources] = useState([]);
@@ -55,10 +56,6 @@ const ResourcesTab = ({ navigation, event_id }) => {
     navigation.navigate("AddResource", { eventId: event_id });
   };
 
-  const handleViewDetails = (item) => {
-    navigation.navigate("ResourceDetail", { id: item.id, eventId: event_id });
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -79,11 +76,16 @@ const ResourcesTab = ({ navigation, event_id }) => {
 
   if (resources.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No hay recursos asignados</Text>
+      <View style={styles.container}>
         <AddButton onPress={handleAddPress} />
+        
+        <View style={styles.emptyMessageContainer}>
+          <Feather name="box" size={60} color={colors.textSecondary} />
+          <Text style={styles.emptyText}>No hay recursos agregados</Text>
+          <Text style={styles.emptySubtext}>Agrega recursos para tu evento como equipos, decoración, etc.</Text>
+        </View>
+        
         <DetailsButton 
-          // CORREGIDO: Utilizar la propiedad "eventId" consistentemente
           onPress={() => navigation.navigate("ResourceList", { eventId: event_id })} 
           text="Ver todos los recursos" 
         />
@@ -99,12 +101,10 @@ const ResourcesTab = ({ navigation, event_id }) => {
         <ResourceCard
           key={item.id}
           item={item}
-          onViewDetails={() => handleViewDetails(item)}
         />
       ))}
 
       <DetailsButton 
-        // CORREGIDO: Utilizar la propiedad "eventId" consistentemente
         onPress={() => navigation.navigate("ResourceList", { eventId: event_id })} 
         text="Ver todos los recursos" 
       />
@@ -139,16 +139,24 @@ const styles = StyleSheet.create({
     color: colors.error,
     marginBottom: 20,
   },
-  emptyContainer: {
+  emptyMessageContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
   emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
     textAlign: 'center',
-    fontSize: 16,
-    color: colors.gray[500],
-    marginBottom: 20,
+    marginTop: 8,
+    maxWidth: '80%',
   }
 });
 

@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 import DetailsButton from '../../../../../../components/DetailsButtton';
-import { useFocusEffect } from '@react-navigation/native';
+import FoodCard from '../../../../../../components/Card';  // Usamos la tarjeta de alimentos
 import { useEvent } from '../../../../../../contexts/EventContext';
-import Card from '../../../../../../components/Card'; // Nuevo import
+import { useFocusEffect } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 
 const FoodsTab = ({ navigation, event_id }) => {
   const [foods, setFoods] = useState([]);
@@ -14,10 +15,14 @@ const FoodsTab = ({ navigation, event_id }) => {
 
   const { fetchEventFoods } = useEvent();
 
+  console.log("Event ID in FoodsTab:", event_id);
+
+  // Función para cargar los alimentos
   const loadFoods = async () => {
     setLoading(true);
     try {
       const foodData = await fetchEventFoods(event_id);
+      console.log("Fetched Foods:", foodData);
       setFoods(foodData);
       setError(null);
     } catch (err) {
@@ -28,25 +33,28 @@ const FoodsTab = ({ navigation, event_id }) => {
     }
   };  
 
+  // Cargar alimentos cuando el componente se monta inicialmente
   useEffect(() => {
     loadFoods();
   }, [event_id]);
 
+  // Recargar alimentos cada vez que la pantalla obtiene el foco
   useFocusEffect(
     React.useCallback(() => {
+      console.log("FoodsTab recibió el foco - recargando alimentos...");
       loadFoods();
-      return () => {};
+      return () => {
+        // Cleanup function cuando pierde el foco (opcional)
+        console.log("FoodsTab perdió el foco");
+      };
     }, [event_id])
   );
 
   const handleAddPress = () => {
-    navigation.navigate("AddFood", { event_id });
-  };
-  
-  const handleViewDetails = (item) => {
-    navigation.navigate("FoodDetails", { foodId: item.id, event_id });
+    navigation.navigate("AddFood", { eventId: event_id });
   };
 
+  // Cargando alimentos o mostrando un error
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -55,7 +63,7 @@ const FoodsTab = ({ navigation, event_id }) => {
       </View>
     );
   }
-  
+
   if (error) {
     return (
       <View style={styles.errorContainer}>
@@ -64,38 +72,48 @@ const FoodsTab = ({ navigation, event_id }) => {
       </View>
     );
   }
-  
+
+  // Si no hay alimentos, mostrar el mensaje y el botón de agregar
   if (foods.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No hay alimentos asignados</Text>
+      <View style={styles.container}>
         <AddButton onPress={handleAddPress} />
+        
+        <View style={styles.emptyMessageContainer}>
+          <Feather name="coffee" size={60} color={colors.gray[400]} />
+          <Text style={styles.emptyText}>No hay alimentos</Text>
+          <Text style={styles.emptySubtext}>Agrega alimentos para tu evento</Text>
+        </View>
+        
+        <DetailsButton 
+          onPress={() => navigation.navigate("FoodList", { 
+            event_id: event_id, 
+            foodsData: foods 
+          })} 
+          text="Ver todos los alimentos" 
+        />
       </View>
     );
   }
-  
+
+  // Si hay alimentos, mostrar los primeros 3 y el botón "Ver todos los alimentos"
   return (
     <View style={styles.container}>
       <AddButton onPress={handleAddPress} />
-      
+
+      {/* Mostrar solo los primeros 3 alimentos */}
       {foods.slice(0, 3).map(item => (
-        <Card
-          key={item.id}
-          item={{
-            ...item,
-            quantity_available: item.quantity || item.stock,
-            description: item.description || "Descripción no disponible"
-          }}
-          onViewDetails={() => handleViewDetails(item)}
+        <FoodCard
+        key={item.id}
+        item={item}
         />
       ))}
 
-      {foods.length > 3 && (
-        <DetailsButton 
-          onPress={() => navigation.navigate("FoodList", { event_id: event_id })} 
-          text="Ver todos los alimentos" 
-        />
-      )}
+      {/* Siempre mostrar el botón "Ver todos los alimentos" */}
+      <DetailsButton 
+        onPress={() => navigation.navigate("FoodList", { event_id: event_id})} 
+        text="Ver todos los alimentos" 
+      />
     </View>
   );
 };
@@ -103,7 +121,7 @@ const FoodsTab = ({ navigation, event_id }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -127,16 +145,25 @@ const styles = StyleSheet.create({
     color: colors.error,
     marginBottom: 20,
   },
-  emptyContainer: {
+  emptyMessageContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
   emptyText: {
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    textAlign: 'center',
+    fontSize: 14,
     color: colors.gray[500],
     marginBottom: 20,
+    maxWidth: '80%',
   },
 });
 

@@ -5,7 +5,7 @@ import { Feather } from "@expo/vector-icons";
 import { useResource } from "../../../../../contexts/ResourceContext";
 import { useEvent } from "../../../../../contexts/EventContext";
 import { colors } from "../../../../../styles/colors";
-import CardList from "../../../../../components/CardList";// Asegúrate de ajustar el path al componente ResourceCard
+import CardList from "../../../../../components/CardList";
 
 const ResourceListScreen = () => {
   const navigation = useNavigation();
@@ -15,11 +15,12 @@ const ResourceListScreen = () => {
 
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadResources();
+    
+    // Escuchar cuando la pantalla recibe el foco (cuando regresa de otras pantallas)
     const unsubscribe = navigation.addListener('focus', () => {
       loadResources();
     });
@@ -57,15 +58,19 @@ const ResourceListScreen = () => {
           text: "Eliminar",
           style: "destructive",
           onPress: async () => {
-            setIsDeleting(true);
             try {
+              // No activamos setLoading(true) aquí para evitar la pantalla de carga
               await removeResourceFromEvent(eventId, resourceId);
-              await loadResources();
-              navigation.navigate("ResourceDeleted", { eventId });
+              // Navegamos a la pantalla de confirmación de eliminación
+              navigation.navigate("ResourceDeleted", { 
+                eventId,
+                onGoBack: () => {
+                  // Esta función se puede usar para actualizar datos cuando regrese
+                  loadResources();
+                }
+              });
             } catch (err) {
               Alert.alert("Error", "No se pudo eliminar el recurso. Inténtalo de nuevo.");
-            } finally {
-              setIsDeleting(false);
             }
           },
         },
@@ -101,7 +106,7 @@ const ResourceListScreen = () => {
         <Text style={styles.addButtonText}>Agregar Recurso</Text>
       </TouchableOpacity>
 
-      {loading || isDeleting ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Cargando recursos...</Text>
@@ -134,6 +139,7 @@ const ResourceListScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  // Los estilos se mantienen igual
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -142,8 +148,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
+    paddingTop: 40,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    marginTop: 20,
   },
   backButton: {
     marginRight: 16,

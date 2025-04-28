@@ -8,8 +8,6 @@ const ResourceCreatedScreen = () => {
   const route = useRoute();
   const { eventId } = route.params;  // Obtenemos el parámetro eventId del objeto route.params
 
-  console.log("Event ID received created:", eventId);
-
   const handleViewResources = () => {
     // Mantener el mismo nombre de parámetro en todas las navegaciones
     navigation.navigate("ResourceList", { eventId: eventId });
@@ -22,8 +20,7 @@ const ResourceCreatedScreen = () => {
 
   const handleBackToEvent = () => {
     // Pasar eventId como parte de un objeto, no directamente
-    navigation.navigate("EventDetail", { eventId: eventId });
-    console.log("Navigating back to EventDetail with ID:", eventId);
+    navigation.navigate("EventDetail", eventId);
   };
 
   return (
