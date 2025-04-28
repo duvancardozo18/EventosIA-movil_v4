@@ -44,7 +44,23 @@ export const authService = {
 // Servicios de usuarios
 export const userService = {
   getUsers: () => api.get("/users"),
-  getUser: (email) => api.get(`/users/${email}`),
+  getUser: async (email) => {
+    try {
+      const response = await api.get(`/users/${email}`)
+      if (response.status === 200 && response.data.usuario) {
+        return response.data
+      }
+      return null
+    } catch (error) {
+      // Si el error es 404 (usuario no encontrado), simplemente devolver null
+      if (error.response && error.response.status === 404) {
+        return null
+      }
+      // Si es otro error (problema de servidor, etc.), sí mostrar error
+      console.error("Error obteniendo usuario:", error)
+      return null
+    }
+  },
   createUser: (userData) => api.post("/users", userData),
   updateUser: (id, userData) => api.put(`/users/${id}/rol`, userData),
   deleteUser: (email) => api.delete("/delete-user", { data: { email } }),
