@@ -45,7 +45,7 @@ import ResourceDeletedScreen from "./src/screens/dashboard/myevents/event/resour
 import FoodListScreen from "./src/screens/dashboard/myevents/event/food/FoodListScreen";
 //import AddFoodScreen from "./src/screens/AddFoodScreen";
 import FoodCreatedScreen from "./src/screens/dashboard/myevents/event/food/FoodCreatedScreen";
-//import EditFoodScreen from "./src/screens/EditFoodScreen";
+import EditFoodScreen from "./src/screens/dashboard/myevents/event/food/EditFoodScreen";
 import FoodDeletedScreen from "./src/screens/dashboard/myevents/event/food/FoodDeletedScreen";
 import NotificationsScreen from "./src/screens/dashboard/notification/NotificationsScreen";
 import ProfileScreen from "./src/screens/dashboard/profile/ProfileScreen";
@@ -100,7 +100,7 @@ export default function App() {
                       <Stack.Screen name="ResourceDeleted" component={ResourceDeletedScreen} />
                       <Stack.Screen name="FoodList" component={FoodListScreen} />
                       <Stack.Screen name="AddFood" component={AddFoodScreen} />
-                      
+                      <Stack.Screen name="EditFood" component={EditFoodScreen} />
                       <Stack.Screen name="FoodCreated" component={FoodCreatedScreen} />
                       
                       <Stack.Screen name="FoodDeleted" component={FoodDeletedScreen} />

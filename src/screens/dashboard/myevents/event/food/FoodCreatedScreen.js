@@ -6,27 +6,43 @@ import { colors } from "../../../../../styles/colors";
 const FoodCreatedScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {eventId} = route.params;
-
-  console.log("Event ID received:", eventId);
+  
+  // Extract event_id directly from route.params (simplified structure)
+  const eventId = route.params?.event_id || route.params?.params?.event_id;
+  
+  console.log("Route params in FoodCreatedScreen:", route.params);
+  console.log("Event ID extracted in FoodCreatedScreen:", eventId);
 
   const handleViewFoods = () => {
-    // Crear un objeto de evento con la estructura esperada por FoodListScreen
-    const eventParam = {
-      event_id: eventId
-    };
-    navigation.navigate("FoodList", eventParam); // Navegar a la lista de comidas
+    // Navigate to FoodList with simplified params structure
+    navigation.navigate("FoodList", { event_id: eventId });
   };
 
   const handleAddAnother = () => {
-    // navigation.navigate("AddFood", eventId); // Navegar a la pantalla para agregar otra comida
-    console.log("Navigating to AddFood with ID:", eventId);
+    // Navigate to AddFood with simplified params structure
+    navigation.navigate("AddFood", { eventId });
   };
 
   const handleBackToEvent = () => {
-    // navigation.navigate("EventDetail", eventId); // Navegar de vuelta al evento
+    // Navigate back to EventDetail with simplified params structure
+    navigation.navigate("EventDetail", eventId );
     console.log("Navigating back to EventDetail with ID:", eventId);
   };
+
+  // Error handling if no eventId
+  if (!eventId) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={styles.title}>Error: No se pudo identificar el evento</Text>
+        <TouchableOpacity 
+          style={[styles.button, styles.primaryButton, { marginTop: 20 }]} 
+          onPress={() => navigation.navigate("Home")}
+        >
+          <Text style={styles.primaryButtonText}>Volver al inicio</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -35,17 +51,17 @@ const FoodCreatedScreen = () => {
           <Feather name="check-circle" size={80} color={colors.success} />
         </View>
 
-        <Text style={styles.title}>¡Comida Agregada!</Text> {/* Cambié el título de recurso a comida */}
+        <Text style={styles.title}>¡Comida Agregada!</Text>
         
-        <Text style={styles.message}>La comida ha sido agregada exitosamente al evento.</Text> {/* Mensaje adaptado a comida */}
+        <Text style={styles.message}>La comida ha sido agregada exitosamente al evento.</Text>
 
         <View style={styles.buttonsContainer}>
           <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleViewFoods}>
-            <Text style={styles.primaryButtonText}>Ver Comidas</Text> {/* Botón para ver las comidas */}
+            <Text style={styles.primaryButtonText}>Ver Comidas</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleAddAnother}>
-            <Text style={styles.secondaryButtonText}>Agregar Otra Comida</Text> {/* Botón para agregar otra comida */}
+            <Text style={styles.secondaryButtonText}>Agregar Otra Comida</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.button, styles.outlineButton]} onPress={handleBackToEvent}>

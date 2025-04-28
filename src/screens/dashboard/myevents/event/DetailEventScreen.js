@@ -15,6 +15,7 @@ import Button from "../../../../components/Button";
 export default function CompleteEventScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  console.log("Route params in CompleteEventScreen:", route);
   const event_id  = route.params || {};
   console.log("Event ID received:", event_id);
 

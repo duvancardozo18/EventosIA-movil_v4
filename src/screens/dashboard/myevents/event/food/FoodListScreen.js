@@ -1,49 +1,66 @@
-"use client"
-
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { useFood } from "../../../../../contexts/FoodContext";
 import { useEvent } from "../../../../../contexts/EventContext";
 import { colors } from "../../../../../styles/colors";
-import CardList from '../../../../../components/CardList'; // Aquí importamos la nueva tarjeta genérica
+import CardList from '../../../../../components/CardList';
+import { useCallback } from "react";
 
 const FoodListScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const event = route.params;
-  console.log("Event ID received:", event); // Verificamos en consola
+  
+  // Extraer event_id correctamente desde route.params
+  const eventId = route.params?.event_id;
+
+  console.log("Params received in FoodListScreen:", route.params);
+  console.log("Event ID received in FoodListScreen:", eventId);
 
   const { deleteFood } = useFood();
   const { fetchEventFoods } = useEvent();
-  const [foods, setFoods] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [foods, setFoods] = useState([]);  // Lista de alimentos
+  const [loading, setLoading] = useState(true); // Indicador de carga
+  const [error, setError] = useState(null); // Manejo de errores
 
-  const eventId = event.event_id;
-  console.log(eventId); // Asegúrate de que estás usando el ID correcto del evento
-
-  useEffect(() => {
-    loadFoods();
-  }, [eventId]);
-
+  // Función para cargar los alimentos desde el servidor
   const loadFoods = async () => {
+    if (!eventId) {
+      setError("No se pudo identificar el evento. Por favor, regresa e intenta de nuevo.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const foodData = await fetchEventFoods(eventId);
       setFoods(foodData);
-      setError(null);
+      setError(null); // No hay errores
     } catch (err) {
       setError("No se pudieron cargar los alimentos. Por favor, intenta de nuevo.");
       console.error("Error loading foods:", err);
     } finally {
-      setLoading(false);
+      setLoading(false); // Fin de la carga
     }
   };
 
+  // Cargar los alimentos cuando el componente se monta o cuando eventId cambia
+  useEffect(() => {
+    loadFoods();
+  }, [eventId]);  // Dependencia de eventId para recargar los alimentos cuando cambia
+
+  // Recargar los alimentos cada vez que la pantalla reciba el foco
+  useFocusEffect(
+    useCallback(() => {
+      console.log("FoodListScreen focused - Reloading foods");
+      loadFoods();
+    }, [eventId])
+  );
+
+  // Recargar los alimentos después de una acción como eliminar o actualizar
   const handleAddFood = () => {
-    navigation.navigate("AddFood", eventId);
+    navigation.navigate("AddFood", { eventId: eventId });
   };
 
   const handleEditFood = (foodId) => {
@@ -51,6 +68,7 @@ const FoodListScreen = () => {
   };
 
   const handleDeleteFood = (foodId) => {
+    console.log("Deleting food with ID:", foodId);
     Alert.alert(
       "Eliminar Alimento",
       "¿Estás seguro de que deseas eliminar este alimento?",
@@ -61,8 +79,10 @@ const FoodListScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteFood(eventId, foodId);
-              loadFoods();
+              await deleteFood(foodId);
+              // Ya no es necesario recargar manualmente aquí, 
+              // la lista se recargará automáticamente al volver a esta pantalla
+              navigation.navigate("FoodDeleted", eventId ); // Navegar a la pantalla de confirmación
             } catch (err) {
               Alert.alert("Error", "No se pudo eliminar el alimento.");
             }
@@ -72,19 +92,23 @@ const FoodListScreen = () => {
     );
   };
 
-  const renderFoodItem = ({ item }) => (
-    <CardList
-      item={{
-        name: item.name,
-        quantity: `${item.quantity_available} ${item.unit}`,
-        price: item.price,
-        totalCost: item.quantity_available * item.price,
-        description: item.description || "Sin notas adicionales"
-      }}
-      onEdit={() => handleEditFood(item.id_food)}
-      onDelete={() => handleDeleteFood(item.id_food)}
-    />
-  );
+  const renderFoodItem = ({ item }) => {
+    const foodId = item.id_food || item.id; // Obtener ID correctamente
+
+    return (
+      <CardList
+        item={{
+          name: item.name,
+          quantity: `${item.quantity_available || item.quantity || item.stock || 0} ${item.unit || ''}`,
+          price: item.price,
+          totalCost: (item.quantity_available || item.quantity || item.stock || 0) * (item.price || 0),
+          description: item.description || "Sin notas adicionales"
+        }}
+        onEdit={() => handleEditFood(foodId)}
+        onDelete={() => handleDeleteFood(foodId)}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -123,7 +147,7 @@ const FoodListScreen = () => {
         <FlatList
           data={foods}
           renderItem={renderFoodItem}
-          keyExtractor={(item) => item.id_food.toString()}
+          keyExtractor={(item) => String(item.id_food || item.id || Math.random())}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
@@ -132,7 +156,6 @@ const FoodListScreen = () => {
   );
 };
 
-// Mantener los mismos estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -142,8 +165,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
+    paddingTop: 40,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    marginTop: 20,
   },
   backButton: {
     marginRight: 16,

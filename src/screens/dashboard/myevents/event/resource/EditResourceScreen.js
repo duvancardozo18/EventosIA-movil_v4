@@ -105,7 +105,7 @@ const EditResourceScreen = () => {
       if (!updatedResource) {
         throw new Error("No se pudo actualizar el recurso");} 
       else {       // Navegar de vuelta al listado de recursos o pantalla anterior
-        navigation.navigate("ResourceCreated", eventId );}
+        navigation.navigate("ResourceCreated", { eventId } );}
     } catch (error) {
       Alert.alert("Error", "No se pudo actualizar el recurso. Inténtalo de nuevo.");
     } finally {
