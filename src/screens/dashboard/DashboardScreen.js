@@ -58,22 +58,24 @@ export default function DashboardScreen() {
           navigation.navigate("EventDetail", { event_id: item.id_event })
         }}
       >
-        <View style={styles.eventImageContainer}>
-          {item.image_url &&
-          Array.isArray(item.image_url) &&
-          item.image_url.length > 0 ? (
-            <Image
-              source={{ uri: item.image_url[0] }}
-              style={styles.eventImage}
-              resizeMode="cover"
-            />
-          ) : null}
-          <View style={styles.dateTag}>
-            <Text style={styles.eventStateText}>
-              {item.state ? item.state : "Estado no disponible"}
-            </Text>
+      <View style={styles.eventImageContainer}>
+        {item.image_url && Array.isArray(item.image_url) && item.image_url.length > 0 ? (
+          <Image
+            source={{ uri: item.image_url[0] }}
+            style={styles.eventImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.noImageContainer}>
+            <Text style={styles.noImageText}>Sin imagen</Text>
           </View>
+        )}
+        <View style={styles.dateTag}>
+          <Text style={styles.eventStateText}>
+            {item.state ? item.state : "Estado no disponible"}
+          </Text>
         </View>
+      </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventTitle} numberOfLines={1}>
             {item.name}
@@ -377,6 +379,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  noImageContainer: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: colors.indigo[100],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noImageText: {
+    color: colors.indigo[500],
+    fontSize: 12,
   },
 })
 
