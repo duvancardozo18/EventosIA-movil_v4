@@ -11,6 +11,8 @@ import BottomTabBar from "../../components/BottomTabBar"
 import { colors } from "../../styles/colors"
 import { FontAwesome6 } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
+import { Linking } from 'react-native';
+
 
 export default function DashboardScreen() {
   const navigation = useNavigation()
@@ -18,6 +20,7 @@ export default function DashboardScreen() {
   const { user } = useAuth()
   const [hasEvents, setHasEvents] = useState(false)
   const scrollRef = useRef(null)
+
 
     // Recargar eventos automáticamente al enfocarse la pantalla
     useFocusEffect(
@@ -110,12 +113,29 @@ export default function DashboardScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.createButtonContainer}>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => navigation.navigate("CreateEvent")}
-          >
-            <Text style={styles.createButtonText}>CREAR EVENTO</Text>
-          </TouchableOpacity>
+        
+        {user?.role === "User" && ( 
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => {
+                const phoneNumber = '573173453174'; 
+                const message = 'Hola, necesito comunicarme con un gestor.';
+                const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                Linking.openURL(url).catch(err => console.error("Error al abrir WhatsApp", err));
+              }}
+            >
+              <Text style={styles.createButtonText}>COMUNICARME CON UN GESTOR</Text>
+            </TouchableOpacity>
+          )}
+
+        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => navigation.navigate("CreateEvent")}
+            >
+              <Text style={styles.createButtonText}>CREAR EVENTO</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {error ? (
