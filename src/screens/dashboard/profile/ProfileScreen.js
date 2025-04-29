@@ -10,13 +10,12 @@ export default function ProfileScreen() {
   const navigation = useNavigation()
   const { user, logout } = useAuth()
 
-  // Datos de ejemplo para el perfil
+  
   const perfilData = {
-    nombre: user?.name || "Usuario",
-    correo: user?.email || "usuario@example.com",
-    celular: "123 456 7890",
-    rol: "Gestor de eventos",
-    avatar: "https://via.placeholder.com/128",
+    nombre: user?.name || "Sin datos",
+    correo: user?.email || "Sin datos",
+    last_name: user?.last_name || "Sin datos",
+    role: user?.role || "Sin datos",
   }
 
   const handleLogout = async () => {
@@ -28,14 +27,16 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
-          <Icon name="arrow-left" size={24} color={colors.gray[800]} />
+          <Icon name="arrow-left" size={24} marginTop={34} color={colors.gray[800]} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
         <View style={styles.profileHeader}>
-          <Image source={{ uri: perfilData.avatar }} style={styles.avatar} />
-          <Text style={styles.profileName}>{perfilData.nombre}</Text>
+           <View style={styles.avatar}>
+                <Icon name="user" size={70} color="#B0B0B0" />
+            </View>
+          <Text style={styles.profileName}>{perfilData.nombre} {perfilData.last_name}</Text>
         </View>
 
         <View style={styles.infoSection}>
@@ -46,14 +47,10 @@ export default function ProfileScreen() {
             <Text style={styles.infoValue}>{perfilData.correo}</Text>
           </View>
 
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Celular:</Text>
-            <Text style={styles.infoValue}>{perfilData.celular}</Text>
-          </View>
 
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Rol</Text>
-            <Text style={styles.infoValue}>{perfilData.rol}</Text>
+            <Text style={styles.infoValue}>{perfilData.role}</Text>
           </View>
         </View>
 
@@ -87,23 +84,28 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   avatar: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
-    marginBottom: 16,
+    width: 78,
+    height: 78,
+    borderRadius: 24,
+    overflow: "hidden",
+    marginRight: 12,
+    backgroundColor: colors.gray[200],
+    alignItems: "center",
+    marginTop: 56,
   },
   profileName: {
     fontSize: 24,
     fontWeight: "bold",
   },
   infoSection: {
-    marginBottom: 32,
+    marginTop: 16,
+    marginBottom: 200,
   },
   sectionTitle: {
     color: colors.indigo[500],
     fontWeight: "bold",
     marginBottom: 16,
-    fontSize: 16,
+    fontSize: 19,
   },
   infoItem: {
     marginBottom: 24,
@@ -111,9 +113,11 @@ const styles = StyleSheet.create({
   infoLabel: {
     color: colors.gray[500],
     marginBottom: 4,
+    fontSize: 19,
   },
   infoValue: {
     fontWeight: "500",
+    fontSize: 16,
   },
   logoutButton: {
     flexDirection: "row",

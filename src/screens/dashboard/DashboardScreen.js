@@ -89,13 +89,6 @@ export default function DashboardScreen() {
               {item.location ? `${item.location}` : "Sin ubicación"}
             </Text>
           </View>
-          <View style={styles.attendeesContainer}>
-            <View style={styles.avatarGroup}>
-              <View style={[styles.avatar, styles.avatar1]}></View>
-              <View style={[styles.avatar, styles.avatar2]}></View>
-            </View>
-            <Text style={styles.attendeesText}>+20 Going</Text>
-          </View>
         </View>
       </TouchableOpacity>
     )
@@ -182,17 +175,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+   
   },
   header: {
     backgroundColor: colors.indigo[600],
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
+    paddingBottom: 26,
   },
   headerTitle: {
     color: "white",
     fontSize: 20,
     fontWeight: "bold",
+    paddingTop: 36,
   },
   content: {
     flex: 1,
