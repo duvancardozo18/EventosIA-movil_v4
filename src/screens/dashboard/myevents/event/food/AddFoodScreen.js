@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -13,10 +11,11 @@ import { useFood } from "../../../../../contexts/FoodContext";
 const AddFoodScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  // Fix here: Extract the actual event ID value from route.params
-  const eventId = route.params?.event_id || route.params;
   
-  // Context hooks
+  // Extraer eventId de manera consistente
+  const eventId = route.params?.eventId;
+  
+  // Hooks de contexto
   const { assignFoodToEvent } = useEvent();
   const { createFood } = useFood();
 
@@ -29,6 +28,7 @@ const AddFoodScreen = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Función para manejar los cambios en los campos
   const handleChange = (name, value) => {
     setFoodData(prev => ({ ...prev, [name]: value }));
 
@@ -37,6 +37,7 @@ const AddFoodScreen = () => {
     }
   };
 
+  // Validación del formulario
   const validateForm = () => {
     const newErrors = {};
     if (!foodData.name.trim()) newErrors.name = "Campo requerido";
@@ -46,12 +47,21 @@ const AddFoodScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Función de envío del formulario
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
+    if (!eventId) {
+      Alert.alert(
+        "Error", 
+        "No se pudo identificar el evento. Por favor, regresa e intenta de nuevo."
+      );
+      return;
+    }
   
     setLoading(true);
     try {
-      // 1. Crear alimento
+      // Crear el alimento
       const newFood = await createFood({
         name: foodData.name,
         description: foodData.description,
@@ -59,27 +69,35 @@ const AddFoodScreen = () => {
         price: Number(foodData.unitValue),
       });
       
-      // Verifica la estructura del objeto newFood para identificar el ID correcto
-      const foodId = newFood.id_food;
+      // Obtener el ID del alimento creado
+      const foodId = newFood?.id_food || newFood?.id;
       
       if (!foodId) {
         throw new Error("No se pudo obtener el ID del alimento creado");
       }
 
-      const eventIdNum = parseInt(eventId);
-      const foodIdNum = parseInt(foodId);
-      // 2. Asignar alimento al evento - Enviar IDs como enteros simples
+      // Convertir IDs a números si son strings
+      const eventIdNum = typeof eventId === 'string' ? parseInt(eventId) : eventId;
+      const foodIdNum = typeof foodId === 'string' ? parseInt(foodId) : foodId;
+      
+      // Asignar el alimento al evento
       await assignFoodToEvent({
         id_event: eventIdNum,
         id_food: foodIdNum,
       });
       
-      // Navegar a pantalla de éxito
-      navigation.navigate("FoodCreated", eventId);
+      // Navegar a la pantalla de éxito
+      navigation.navigate("FoodCreated", { 
+        event_id: eventId
+      });
+
+      // **Resetear los campos** después de crear el alimento
+      setFoodData({ name: "", description: "", quantity: "", unitValue: "" });
+
     } catch (error) {
       console.error("Error creando o asociando alimento:", error);
       
-      // Fix: Ensure we're only passing strings to Alert, not rendering components
+      // Asegurarse de mostrar solo mensajes de error como strings
       const errorMessage = typeof error.message === 'string' 
         ? error.message 
         : 'Error desconocido';
