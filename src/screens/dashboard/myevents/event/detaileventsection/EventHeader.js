@@ -1,15 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { colors } from '../../../../../styles/colors';
-import ImageBanner from '../../../../../../assets/banner_event.jpg'; // Cambia la ruta según tu estructura de carpetas
+import ImageBanner from '../../../../../../assets/banner_event.jpg'; 
+import { useNavigation } from '@react-navigation/native'; // <-- Importar navegación
 
 const EventHeader = ({ 
   eventData,
   formatDateRange,
   formatTimeRange 
 }) => {
-  // Componente reutilizable para filas de detalle
+  const navigation = useNavigation(); // <-- Hook de navegación
+
+
+
   const DetailRow = ({ icon, mainText, secondaryText }) => (
     <View style={styles.iconDetailContainer}>
       <View style={styles.iconBackground}>
@@ -29,42 +33,40 @@ const EventHeader = ({
         style={styles.eventImage}
       />
 
-      {/* Badge superpuesto */}
+      {/* Badge presionable */}
       <View style={styles.badgeOverlay}>
+      <TouchableOpacity onPress={() => navigation.navigate('EventStatus', { eventId: eventData.id_event })}>
         <View style={styles.plannedBadge}>
           <Text style={styles.badgeText}>{eventData?.state || "Planeado"}</Text>
           <Icon name="edit-2" size={20} color={colors.indigo[500]} />
         </View>
+      </TouchableOpacity>
+
       </View>
 
-      {/* Contenido del header */}
       <View style={styles.headerContent}>
         <View style={styles.headerTextContainer}>
           <Text style={styles.eventTitle}>{eventData?.event_name || "..."}</Text>
           <Text style={styles.eventSubtitle}>{eventData?.category_name || "..."}</Text>
         
-          {/* Fila de fecha y hora */}
           <DetailRow 
             icon="calendar" 
             mainText={formatDateRange()} 
             secondaryText={formatTimeRange()} 
           />
           
-          {/* Fila de ubicación */}
           <DetailRow 
             icon="map-pin" 
             mainText={eventData?.location_name} 
             secondaryText={eventData?.location_address} 
           />
           
-          {/* Fila de modalidad */}
           <DetailRow 
             icon="monitor" 
             mainText={`Modalidad - ${eventData?.event_type}`}
             secondaryText={eventData?.video_conference_link ? "Enlace disponible" : "Sin enlace virtual"}
           />
           
-          {/* Participantes */}
           <DetailRow 
             icon="users" 
             mainText={`Max. Participantes: ${eventData?.max_participants}`}
@@ -74,6 +76,7 @@ const EventHeader = ({
     </View>
   );
 };
+
 
 // Estilos (los mismos que ya tenías)
 const styles = StyleSheet.create({

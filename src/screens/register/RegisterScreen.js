@@ -15,7 +15,7 @@ export default function RegisterScreen() {
     email: "",
     password: "",
     confirmPassword: "",
-    id_role: 2, // Por defecto, rol de usuario normal
+    id_role: 3, // Por defecto, rol de usuario normal
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)

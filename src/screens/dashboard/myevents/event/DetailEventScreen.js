@@ -1,8 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
+//import { useState, useEffect, useCallback } from "react";
+//import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
+//import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
+import { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native"
+import { useNavigation, useRoute, useIsFocused } from "@react-navigation/native"
+
 import { useEvent } from "../../../../contexts/EventContext"
 import BottomTabBar from "../../../../components/BottomTabBar"
 import { colors } from "../../../../styles/colors"
@@ -15,8 +19,15 @@ import EditEventButton from "../../../../components/EditEventButton";
 export default function CompleteEventScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const event_id  = route.params || {};
-  console.log("Event ID received:", event_id);
+
+  //const event_id  = route.params || {};
+  //console.log("Event ID received:", event_id);
+
+  const { event_id } = route.params || {};
+  const numericEventId = Number(event_id);
+
+  //console.log("Event ID received:", event_id);
+
 
   const [activeTab, setActiveTab] = useState("Participantes");
   const [event, setEvent] = useState(null);
@@ -37,18 +48,28 @@ export default function CompleteEventScreen() {
   const [loadingFoods, setLoadingFoods] = useState(false)
   const [loadingParticipants, setLoadingParticipants] = useState(false)
   
+
   // Función para cargar los datos del evento
-  const loadEvent = useCallback(async () => {
-    console.log("Loading event data for ID:", event_id);
-    if (event_id) {
-      try {
-        const eventData = await fetchEvent(event_id);
-        if (eventData) {
-          console.log("Event data loaded successfully:", eventData);
+  //const loadEvent = useCallback(async () => {
+    //console.log("Loading event data for ID:", event_id);
+    //if (event_id) {
+      //try {
+        //const eventData = await fetchEvent(event_id);
+        //if (eventData) {
+          //console.log("Event data loaded successfully:", eventData);
           // Solo actualizamos el estado si los datos son diferentes para evitar ciclos
-          if (JSON.stringify(event) !== JSON.stringify(eventData)) {
-            setEvent(eventData);
-          }
+          //if (JSON.stringify(event) !== JSON.stringify(eventData)) {
+            //setEvent(eventData);
+          //}
+
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused && event_id) {
+      const loadEvent = async () => {
+        const eventData = await fetchEvent(numericEventId);
+        if (eventData) {
+          setEvent(eventData);
         } else {
           console.error("No event data returned from fetchEvent");
           if (!event) { // Solo mostrar alerta si no tenemos datos previos
@@ -62,12 +83,19 @@ export default function CompleteEventScreen() {
           Alert.alert("Error", "Ocurrió un error al cargar los datos del evento");
           navigation.goBack();
         }
-      }
-    } else {
-      Alert.alert("Error", "No se recibió ID de evento");
-      navigation.goBack();
+
+      //}
+    //} else {
+      //Alert.alert("Error", "No se recibió ID de evento");
+      //navigation.goBack();
+    //}
+  //}, [event_id, fetchEvent, navigation, event]);
+
+      };
+      loadEvent();
     }
-  }, [event_id, fetchEvent, navigation, event]);
+  }, [isFocused, event_id]);
+
 
   // Usar useFocusEffect para recargar los datos cada vez que la pantalla obtiene el foco
   useFocusEffect(
@@ -93,7 +121,7 @@ export default function CompleteEventScreen() {
         // Asegúrate de que siempre sea un array, incluso si es vacío o null/undefined
         setParticipants(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error("Error al cargar participantes:", error)
+        //console.error("Error al cargar participantes:", error)
         setParticipants([]) // Asegúrate de establecer un array vacío en caso de error
       } finally {
         setLoadingParticipants(false)
@@ -104,7 +132,7 @@ export default function CompleteEventScreen() {
         const data = await fetchEventResources(event_id)
         setResources(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error("Error al cargar recursos:", error)
+        //console.error("Error al cargar recursos:", error)
         setResources([])
       } finally {
         setLoadingResources(false)
@@ -115,7 +143,7 @@ export default function CompleteEventScreen() {
         const data = await fetchEventFoods(event_id)
         setFoods(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error("Error al cargar alimentos:", error)
+        //console.error("Error al cargar alimentos:", error)
         setFoods([])
       } finally {
         setLoadingFoods(false)
