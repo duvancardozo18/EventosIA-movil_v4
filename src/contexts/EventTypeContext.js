@@ -39,16 +39,28 @@ export const EventTypeProvider = ({ children }) => {
     }
   };
 
+  // Agregar la función para actualizar el tipo de evento
+  const updateEventType = async (id, eventTypeData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await eventTypeService.updateEventType(id, eventTypeData);
+      
+      // Actualizar el estado con el tipo de evento actualizado
+      setEventTypes(eventTypes.map((eventType) =>
+        eventType.id === id ? response.data : eventType
+      ));
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || "Error al actualizar el tipo de evento");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <EventTypeContext.Provider
-      value={{
-        eventTypes,
-        loading,
-        error,
-        fetchEventTypes,
-        createEventType,
-      }}
-    >
+    <EventTypeContext.Provider value={{ eventTypes, loading, error, fetchEventTypes, createEventType, updateEventType }}>
       {children}
     </EventTypeContext.Provider>
   );

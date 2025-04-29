@@ -113,7 +113,7 @@ const EditFoodScreen = () => {
         throw new Error("No se pudo actualizar el alimento");
       } else {
         // Navegar a la pantalla de confirmación
-        navigation.navigate("FoodCreated", { eventId });
+        navigation.navigate("FoodCreated", {  event_id: eventId });
       }
     } catch (error) {
       Alert.alert("Error", "No se pudo actualizar el alimento. Inténtalo de nuevo.");
