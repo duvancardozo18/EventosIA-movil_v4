@@ -183,14 +183,30 @@ export default function CreateEventScreen() {
 
 
       console.log("Datos iniciales del formulario:", formData);
+
+      // Convertir fechas al formato local (YYYY-MM-DD HH:mm:ss)
+      const formatDateToLocal = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const seconds = "00";
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      };
+
+      const formattedStartTime = formatDateToLocal(formData.start_time);
+      const formattedEndTime = formatDateToLocal(formData.end_time);
+
+    console.log("Fechas formateadas (local):", formattedStartTime, formattedEndTime);
   
       // 1. Crear tipo de evento
       const typeEventResponse = await createEventType({
         name: formData.name,
         description: formData.description || "",
         event_type: formData.event_modality || "",
-        start_time: formData.start_time || "",
-        end_time: formData.end_time || "",
+        start_time: formattedStartTime, // Usar formato local
+        end_time: formattedEndTime,    // Usar formato local
         video_conference_link: formData.video_conference_link || "",
         price: formData.price_event || "",
         category_id: formData.categories_id || "",
@@ -263,7 +279,16 @@ export default function CreateEventScreen() {
       );
       return;
     }
-  
+
+    if (currentStep === 1 && !formData.categories_id) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor seleccione una categoría",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (currentStep === 2 && !formData.event_modality) {
       Alert.alert(
         "Campo requerido",
@@ -281,6 +306,19 @@ export default function CreateEventScreen() {
       );
       return;
     }
+
+    if (currentStep === 2 && formData.start_time >= formData.end_time) {
+      Alert.alert(
+        "Fecha inválida",
+        "La fecha de finalización no puede ser anterior o igual a la fecha de inicio",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+  
+
+
+
   
   
     setCurrentStep(currentStep + 1);
@@ -363,7 +401,7 @@ export default function CreateEventScreen() {
         </View>
     </View>
 
-    {(formData.event_modality === 'virtual' || formData.event_modality === 'hibrido') && (
+    {(formData.event_modality === 'Virtual' || formData.event_modality === 'Hibrido') && (
         <View style={styles.formGroup}>
             <Text style={styles.label}>Enlace del meet</Text>
             <TextInput
