@@ -52,7 +52,7 @@ export default function DashboardScreen() {
       <TouchableOpacity 
         style={styles.eventCard} 
         onPress={() => {
-          navigation.navigate("EventDetail", item.id_event)
+          navigation.navigate("EventDetail", { event_id: item.id_event })
         }}
       >
         <View style={styles.eventImageContainer}>

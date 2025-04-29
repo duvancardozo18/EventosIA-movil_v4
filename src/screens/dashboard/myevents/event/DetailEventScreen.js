@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
+import { useNavigation, useRoute, useIsFocused } from "@react-navigation/native"
 import { useEvent } from "../../../../contexts/EventContext"
 import BottomTabBar from "../../../../components/BottomTabBar"
 import { colors } from "../../../../styles/colors"
@@ -15,8 +15,10 @@ import Button from "../../../../components/Button";
 export default function CompleteEventScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const event_id  = route.params || {};
-  console.log("Event ID received:", event_id);
+  const { event_id } = route.params || {};
+  const numericEventId = Number(event_id);
+
+  //console.log("Event ID received:", event_id);
 
   const [activeTab, setActiveTab] = useState("Participantes");
   const [event, setEvent] = useState(null);
@@ -37,26 +39,22 @@ export default function CompleteEventScreen() {
   const [loadingParticipants, setLoadingParticipants] = useState(false)
   const { deleteEvent } = useEvent(); // asegúrate que lo tienes importado del contexto
   
+  const isFocused = useIsFocused();
+
   useEffect(() => {
-    // Fetch event details when component mounts
-    if (event_id) {
+    if (isFocused && event_id) {
       const loadEvent = async () => {
-        const eventData = await fetchEvent(event_id);
+        const eventData = await fetchEvent(numericEventId);
         if (eventData) {
           setEvent(eventData);
-          console.log("Event data loaded:", eventData);
         } else {
           Alert.alert("Error", "No se pudo cargar la información del evento");
           navigation.goBack();
         }
       };
-      
       loadEvent();
-    } else {
-      Alert.alert("Error", "No se recibió ID de evento");
-      navigation.goBack();
     }
-  }, [event_id]);
+  }, [isFocused, event_id]);
 
   const loadTabData = async () => {
     if (activeTab === "Participantes") {
@@ -66,7 +64,7 @@ export default function CompleteEventScreen() {
         // Asegúrate de que siempre sea un array, incluso si es vacío o null/undefined
         setParticipants(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error("Error al cargar participantes:", error)
+        //console.error("Error al cargar participantes:", error)
         setParticipants([]) // Asegúrate de establecer un array vacío en caso de error
       } finally {
         setLoadingParticipants(false)
@@ -77,7 +75,7 @@ export default function CompleteEventScreen() {
         const data = await fetchEventResources(event_id)
         setResources(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error("Error al cargar recursos:", error)
+        //console.error("Error al cargar recursos:", error)
         setResources([])
       } finally {
         setLoadingResources(false)
@@ -88,7 +86,7 @@ export default function CompleteEventScreen() {
         const data = await fetchEventFoods(event_id)
         setFoods(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error("Error al cargar alimentos:", error)
+        //console.error("Error al cargar alimentos:", error)
         setFoods([])
       } finally {
         setLoadingFoods(false)

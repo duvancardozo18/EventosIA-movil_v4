@@ -77,6 +77,10 @@ export const userService = {
         }
       });
     },
+    updateEventStatus: (eventId, body) => {
+      return api.put(`/events/${eventId}/status`, body);
+    },
+
     deleteEvent: (id) => api.delete(`/events/${id}`),
     createEvent: (formData) => {
     // Crear FormData para manejar la imagen y otros campos

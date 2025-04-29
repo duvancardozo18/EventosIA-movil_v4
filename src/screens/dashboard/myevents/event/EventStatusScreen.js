@@ -11,17 +11,27 @@ const EventStatusScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
   const { eventId } = route.params
-  const { getEvent, updateEventStatus } = useEvent()
+  const { fetchEvent, updateEventStatus } = useEvent()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState(null)
 
+  // Mapeo de los estados a sus respectivos IDs en la base de datos
+  const statusMapping = {
+    "Planeado": 1,
+    "En curso": 2,
+    "Completado": 3,
+    "Cancelado": 4,
+    "Confirmado": 5
+  }
+
   const statusOptions = [
-    { id: "planificacion", name: "Planificación", icon: "edit-3", color: colors.info },
-    { id: "confirmado", name: "Confirmado", icon: "check-circle", color: colors.success },
-    { id: "en_progreso", name: "En progreso", icon: "play-circle", color: colors.warning },
-    { id: "completado", name: "Completado", icon: "check-square", color: colors.success },
-    { id: "cancelado", name: "Cancelado", icon: "x-circle", color: colors.danger },
+    { id: "Planeado", name: "Planeado", icon: "edit-3", color: colors.info },
+    { id: "En curso", name: "En Curso", icon: "play-circle", color: colors.warning },
+    { id: "Completado", name: "Completado", icon: "check-square", color: colors.success },
+    { id: "Cancelado", name: "Cancelado", icon: "x-circle", color: colors.danger },
+    { id: "Confirmado", name: "Confirmado", icon: "check-circle", color: colors.success },
+
   ]
 
   useEffect(() => {
@@ -30,32 +40,51 @@ const EventStatusScreen = () => {
 
   const loadEventData = async () => {
     try {
-      const eventData = await getEvent(eventId)
-      setEvent(eventData)
-      setSelectedStatus(eventData.status)
+      console.log("Cargando evento con ID:", eventId); // 👈 Agrega este log
+      const eventData = await fetchEvent(eventId);
+      console.log("Datos del evento:", eventData); // 👈 Otro log
+      setEvent(eventData);
+      setSelectedStatus(eventData.state);
     } catch (error) {
-      Alert.alert("Error", "No se pudo cargar la información del evento")
+      console.error("Error al cargar el evento:", error); // 👈 Imprime el error real
+      Alert.alert("Error", "No se pudo cargar la información del evento");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+  
 
   const handleStatusChange = async () => {
-    if (!selectedStatus || selectedStatus === event.status) {
-      return
+    if (!selectedStatus || selectedStatus === event?.state) {
+      return;
     }
-
+  
     try {
-      setLoading(true)
-      await updateEventStatus(eventId, selectedStatus)
+      setLoading(true);
+      const eventStateId = statusMapping[selectedStatus];
+  
+      const numericEventId = Number(eventId);
+      const numericStateId = Number(eventStateId);
+  
+      console.log("Sending:", {
+        eventId: numericEventId,
+        eventStateId: numericStateId
+      });
+  
+      await updateEventStatus(numericEventId, numericStateId);
+      console.log("Redirigiendo con Event ID:", numericEventId);
       Alert.alert("Éxito", "Estado del evento actualizado correctamente", [
-        { text: "OK", onPress: () => navigation.navigate("EventDetail", { eventId }) },
-      ])
+        { text: "OK", onPress: () => navigation.navigate("EventDetail", { event_id: numericEventId }) },
+      ]);
     } catch (error) {
-      Alert.alert("Error", "No se pudo actualizar el estado del evento")
-      setLoading(false)
+      console.error("Error al cambiar estado:", error);
+      Alert.alert("Error", "No se pudo actualizar el estado del evento");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+  
+  
 
   if (loading) {
     return (
@@ -74,19 +103,7 @@ const EventStatusScreen = () => {
         <Text style={styles.title}>Estado del evento</Text>
       </View>
 
-      <View style={styles.eventInfo}>
-        <Text style={styles.eventName}>{event?.name}</Text>
-        <Text style={styles.eventDate}>
-          {new Date(event?.date).toLocaleDateString("es-ES", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </Text>
-      </View>
-
-      <Text style={styles.sectionTitle}>Selecciona el estado del evento:</Text>
-
+    
       <View style={styles.statusContainer}>
         {statusOptions.map((status) => (
           <TouchableOpacity
@@ -137,6 +154,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    marginTop: 36,
   },
   backButton: {
     marginRight: 16,
@@ -173,6 +191,7 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     marginHorizontal: 16,
+    marginTop: 146,
   },
   statusOption: {
     flexDirection: "row",

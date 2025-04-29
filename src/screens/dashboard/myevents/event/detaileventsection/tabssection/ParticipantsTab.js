@@ -59,9 +59,9 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor
     {isGestor && <AddButton onPress={handleAddPress} />}*/}
       {/* Participantes o mensaje vacío */}
       {participants.length > 0 ? (
-        participants.slice(0, 3).map(participant => (
+        participants.slice(0, 3).map((participant, index) => (
           <ParticipantItem 
-            key={participant.id} 
+            key={participant.id ?? `participant-${index}`} 
             participant={participant} 
           />
         ))
