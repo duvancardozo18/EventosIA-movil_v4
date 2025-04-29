@@ -1,24 +1,33 @@
 "use client"
 
+//import { useState, useEffect, useCallback } from "react";
+//import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
+//import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native"
 import { useNavigation, useRoute, useIsFocused } from "@react-navigation/native"
+
 import { useEvent } from "../../../../contexts/EventContext"
 import BottomTabBar from "../../../../components/BottomTabBar"
 import { colors } from "../../../../styles/colors"
-import ImageBanner from "../../../../../assets/banner_event.jpg"
 import EventHeader from './detaileventsection/EventHeader';
 import EventDescription from './detaileventsection/EventDescription';
 import TabSection from "./detaileventsection/TabSection";
 import Button from "../../../../components/Button";
+import EditEventButton from "../../../../components/EditEventButton";
 
 export default function CompleteEventScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+
+  //const event_id  = route.params || {};
+  //console.log("Event ID received:", event_id);
+
   const { event_id } = route.params || {};
   const numericEventId = Number(event_id);
 
   //console.log("Event ID received:", event_id);
+
 
   const [activeTab, setActiveTab] = useState("Participantes");
   const [event, setEvent] = useState(null);
@@ -29,7 +38,8 @@ export default function CompleteEventScreen() {
     fetchEventFoods,
     loading,
     error,
-    currentEvent
+    currentEvent,
+    deleteEvent
   } = useEvent();
   const [participants, setParticipants] = useState([])
   const [resources, setResources] = useState([])
@@ -37,8 +47,21 @@ export default function CompleteEventScreen() {
   const [loadingResources, setLoadingResources] = useState(false)
   const [loadingFoods, setLoadingFoods] = useState(false)
   const [loadingParticipants, setLoadingParticipants] = useState(false)
-  const { deleteEvent } = useEvent(); // asegúrate que lo tienes importado del contexto
   
+
+  // Función para cargar los datos del evento
+  //const loadEvent = useCallback(async () => {
+    //console.log("Loading event data for ID:", event_id);
+    //if (event_id) {
+      //try {
+        //const eventData = await fetchEvent(event_id);
+        //if (eventData) {
+          //console.log("Event data loaded successfully:", eventData);
+          // Solo actualizamos el estado si los datos son diferentes para evitar ciclos
+          //if (JSON.stringify(event) !== JSON.stringify(eventData)) {
+            //setEvent(eventData);
+          //}
+
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -48,15 +71,49 @@ export default function CompleteEventScreen() {
         if (eventData) {
           setEvent(eventData);
         } else {
-          Alert.alert("Error", "No se pudo cargar la información del evento");
+          console.error("No event data returned from fetchEvent");
+          if (!event) { // Solo mostrar alerta si no tenemos datos previos
+            Alert.alert("Error", "No se pudo cargar la información del evento");
+            navigation.goBack();
+          }
+        }
+      } catch (error) {
+        console.error("Error loading event:", error);
+        if (!event) { // Solo mostrar alerta si no tenemos datos previos
+          Alert.alert("Error", "Ocurrió un error al cargar los datos del evento");
           navigation.goBack();
         }
+
+      //}
+    //} else {
+      //Alert.alert("Error", "No se recibió ID de evento");
+      //navigation.goBack();
+    //}
+  //}, [event_id, fetchEvent, navigation, event]);
+
       };
       loadEvent();
     }
   }, [isFocused, event_id]);
 
-  const loadTabData = async () => {
+
+  // Usar useFocusEffect para recargar los datos cada vez que la pantalla obtiene el foco
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Screen focused, reloading event data");
+      // Solo recargar si no estamos ya cargando datos
+      if (!loading) {
+        loadEvent();
+      }
+      return () => {
+        // Opcional: función de limpieza al perder el foco
+      };
+    }, [loadEvent, loading])
+  );
+
+  const loadTabData = useCallback(async () => {
+    if (!event_id) return;
+    
     if (activeTab === "Participantes") {
       setLoadingParticipants(true)
       try {
@@ -92,17 +149,22 @@ export default function CompleteEventScreen() {
         setLoadingFoods(false)
       }
     }
-  }
+  }, [activeTab, event_id, fetchEventParticipants, fetchEventResources, fetchEventFoods]);
 
-// 1. Modifica tu useEffect para el loadTabData
-useEffect(() => {
-  if (event_id) {
-    loadTabData();
-  }
-}, [activeTab, event_id]); // Remove the fetch functions from dependencies
+  // Load tab data when activeTab changes
+  // Solo cargar datos de pestaña cuando cambia la pestaña activa
+  useEffect(() => {
+    if (event_id && event) { // Solo cargar si tenemos el evento cargado
+      loadTabData();
+    }
+  }, [activeTab, event_id, event]);
 
-  // Use currentEvent from context if available, otherwise use local state
-  const eventData = currentEvent || event;
+  // Ya no recargamos los datos de la pestaña al volver a la pantalla
+  // Ya estamos recargando todo el evento, y los datos de la pestaña se cargan cuando cambia activeTab
+  // Si reactivamos esto, puede causar ciclos infinitos de renderizado
+
+  // Usar preferentemente el estado local, que se actualiza al enfocar la pantalla
+  const eventData = event;
 
   // Format date and time for display
   const formatDate = (dateString) => {
@@ -137,7 +199,6 @@ useEffect(() => {
     }
   };
 
-
   const formatTimeRange = () => {
     if (!eventData) return "Horario no disponible";
     
@@ -151,6 +212,11 @@ useEffect(() => {
     // por ahora el boton no hace nada, solo muestra un mensaje
     Alert.alert("Evento guardado", "El evento ha sido guardado correctamente.");
   }
+
+  const handleEditEvent = () => {
+    // Navegar a la pantalla de edición de evento
+    navigation.navigate("EditEvent", { event_id });
+  };
 
   const handleDeleteEvent = async () => {
     try {
@@ -180,6 +246,15 @@ useEffect(() => {
     }
   };
 
+  // Renderizar un indicador de carga mientras se carga el evento
+  if (!eventData) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>Cargando detalles del evento...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content}>
@@ -189,6 +264,9 @@ useEffect(() => {
           formatDateRange={formatDateRange}
           formatTimeRange={formatTimeRange}
         />
+
+        {/* Botón de Editar Evento - Ahora usando el componente EditButton */}
+        <EditEventButton onPress={handleEditEvent} />
 
         {/* Descripción del evento */}
         <EventDescription 
@@ -240,7 +318,7 @@ useEffect(() => {
   );
 }
 
-// Estilos simplificados (solo los que no están en los componentes hijos)
+// Estilos simplificados
 const styles = StyleSheet.create({
   container: {
     flex: 1,
