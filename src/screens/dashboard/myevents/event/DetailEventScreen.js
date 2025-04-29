@@ -47,23 +47,11 @@ export default function CompleteEventScreen() {
   const [loadingResources, setLoadingResources] = useState(false)
   const [loadingFoods, setLoadingFoods] = useState(false)
   const [loadingParticipants, setLoadingParticipants] = useState(false)
-  
-
-  // Función para cargar los datos del evento
-  //const loadEvent = useCallback(async () => {
-    //console.log("Loading event data for ID:", event_id);
-    //if (event_id) {
-      //try {
-        //const eventData = await fetchEvent(event_id);
-        //if (eventData) {
-          //console.log("Event data loaded successfully:", eventData);
-          // Solo actualizamos el estado si los datos son diferentes para evitar ciclos
-          //if (JSON.stringify(event) !== JSON.stringify(eventData)) {
-            //setEvent(eventData);
-          //}
 
   const isFocused = useIsFocused();
 
+
+  // Usar useFocusEffect para recargar los datos cada vez que la pantalla obtiene el foco
   useEffect(() => {
     if (isFocused && event_id) {
       const loadEvent = async () => {
@@ -71,49 +59,15 @@ export default function CompleteEventScreen() {
         if (eventData) {
           setEvent(eventData);
         } else {
-          console.error("No event data returned from fetchEvent");
-          if (!event) { // Solo mostrar alerta si no tenemos datos previos
-            Alert.alert("Error", "No se pudo cargar la información del evento");
-            navigation.goBack();
-          }
-        }
-      } catch (error) {
-        console.error("Error loading event:", error);
-        if (!event) { // Solo mostrar alerta si no tenemos datos previos
-          Alert.alert("Error", "Ocurrió un error al cargar los datos del evento");
+          Alert.alert("Error", "No se pudo cargar la información del evento");
           navigation.goBack();
         }
-
-      //}
-    //} else {
-      //Alert.alert("Error", "No se recibió ID de evento");
-      //navigation.goBack();
-    //}
-  //}, [event_id, fetchEvent, navigation, event]);
-
       };
       loadEvent();
     }
   }, [isFocused, event_id]);
 
-
-  // Usar useFocusEffect para recargar los datos cada vez que la pantalla obtiene el foco
-  useFocusEffect(
-    useCallback(() => {
-      console.log("Screen focused, reloading event data");
-      // Solo recargar si no estamos ya cargando datos
-      if (!loading) {
-        loadEvent();
-      }
-      return () => {
-        // Opcional: función de limpieza al perder el foco
-      };
-    }, [loadEvent, loading])
-  );
-
-  const loadTabData = useCallback(async () => {
-    if (!event_id) return;
-    
+  const loadTabData = async () => {
     if (activeTab === "Participantes") {
       setLoadingParticipants(true)
       try {
@@ -149,7 +103,7 @@ export default function CompleteEventScreen() {
         setLoadingFoods(false)
       }
     }
-  }, [activeTab, event_id, fetchEventParticipants, fetchEventResources, fetchEventFoods]);
+  }
 
   // Load tab data when activeTab changes
   // Solo cargar datos de pestaña cuando cambia la pestaña activa
