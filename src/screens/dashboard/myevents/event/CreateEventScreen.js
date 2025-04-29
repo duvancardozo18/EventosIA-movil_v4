@@ -193,6 +193,7 @@ export default function CreateEventScreen() {
         end_time: formData.end_time || "",
         video_conference_link: formData.video_conference_link || "",
         price: formData.price_event || "",
+        category_id: formData.categories_id || "",
         max_participants: formData.max_participants || 0
       });
   
@@ -313,14 +314,14 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Categoria *</Text>
+      <Text style={styles.label}>Categoria *</Text>
         <View style={styles.pickerContainer}>
           <Picker
-            selectedValue={formData.event_modality}
-            onValueChange={(value) => handleChange("event_modality", value)}
+            selectedValue={formData.categories_id}
+            onValueChange={(value) => handleChange("categories_id", value)}
             style={styles.picker}
           >
-            <Picker.Item label="Seleccionar categoría" value="" />
+            <Picker.Item label="Seleccionar categoría" value={null} />
             {categories.map((category) => (
               <Picker.Item 
                 key={category.id_category} 
@@ -355,9 +356,9 @@ export default function CreateEventScreen() {
                 style={styles.picker}
             >
                 <Picker.Item label="Seleccionar tipo de evento" value="" />
-                <Picker.Item label="Virtual" value="virtual" />
-                <Picker.Item label="Presencial" value="presencial" />
-                <Picker.Item label="Híbrido" value="hibrido" />
+                <Picker.Item label="Virtual" value="Virtual" />
+                <Picker.Item label="Presencial" value="Presencial" />
+                <Picker.Item label="Híbrido" value="Hibrido" />
             </Picker>
         </View>
     </View>
