@@ -11,6 +11,7 @@ import DateTimePicker from "@react-native-community/datetimepicker"
 import { useEvent } from "../../../../contexts/EventContext"
 import { useLocation } from "../../../../contexts/LocationContext"
 import { useEventType } from "../../../../contexts/EventTypeContext"
+import { useCategory } from "../../../../contexts/CategoryContext"
 import { useAuth } from "../../../../contexts/AuthContext"
 import { colors } from "../../../../styles/colors"
 import { Alert } from 'react-native';
@@ -48,6 +49,8 @@ export default function CreateEventScreen() {
   const [showEndDate, setShowEndDate] = useState(false)
   const [showEndTime, setShowEndTime] = useState(false)
 
+  const { categories, getCategories } = useCategory()
+
   useEffect(() => {
     const loadData = async () => {
       if (user && user.id) {
@@ -56,6 +59,8 @@ export default function CreateEventScreen() {
           user_id_created_by: user.id,
         }))
       }
+      // Cargar categorías
+      await getCategories()
     }
 
     loadData()
@@ -307,6 +312,25 @@ export default function CreateEventScreen() {
         />
       </View>
 
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Categoria *</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.event_modality}
+            onValueChange={(value) => handleChange("event_modality", value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Seleccionar categoría" value="" />
+            {categories.map((category) => (
+              <Picker.Item 
+                key={category.id_category} 
+                label={category.name} 
+                value={category.id_category} 
+              />
+            ))}
+          </Picker>
+        </View>
+      </View>
       <View style={styles.formGroup}>
         <Text style={styles.label}>Imagen</Text>
         <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
