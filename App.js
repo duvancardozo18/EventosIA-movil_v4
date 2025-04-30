@@ -50,6 +50,9 @@ import FoodDeletedScreen from "./src/screens/dashboard/myevents/event/food/FoodD
 import NotificationsScreen from "./src/screens/dashboard/notification/NotificationsScreen";
 import ProfileScreen from "./src/screens/dashboard/profile/ProfileScreen";
 import DetailEventScreen from "./src/screens/dashboard/myevents/event/DetailEventScreen";
+import InvitationScreen from "./src/screens/dashboard/myevents/event/billing/InvitationScreen";
+import PayBillingScreen from "./src/screens/dashboard/myevents/event/billing/PayBillingScreen";
+import BillPaidScreen from "./src/screens/dashboard/myevents/event/billing/BillPaidScreen";
 
 // Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -89,6 +92,9 @@ export default function App() {
                       <Stack.Screen name="EventStatus" component={EventStatusScreen} />
                       <Stack.Screen name="EditEvent" component={EditEventScreen} />
                       <Stack.Screen name="Billing" component={BillingScreen} />
+                      <Stack.Screen name="BillSent" component={InvitationScreen} />
+                      <Stack.Screen name="BillingPayment" component={PayBillingScreen} />
+                      <Stack.Screen name="BillPaid" component={BillPaidScreen} />
                       <Stack.Screen name="LinkClient" component={LinkClientScreen} />
                       <Stack.Screen name="QuoteSent" component={QuoteSentScreen} />
                       <Stack.Screen name="ClientDeleted" component={ClientDeletedScreen} />

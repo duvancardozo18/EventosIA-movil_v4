@@ -89,13 +89,6 @@ export default function DashboardScreen() {
               {item.location ? `${item.location}` : "Sin ubicación"}
             </Text>
           </View>
-          <View style={styles.attendeesContainer}>
-            <View style={styles.avatarGroup}>
-              <View style={[styles.avatar, styles.avatar1]}></View>
-              <View style={[styles.avatar, styles.avatar2]}></View>
-            </View>
-            <Text style={styles.attendeesText}>+20 Going</Text>
-          </View>
         </View>
       </TouchableOpacity>
     )
