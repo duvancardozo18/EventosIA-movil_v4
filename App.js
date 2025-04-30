@@ -53,8 +53,12 @@ import FoodDeletedScreen from "./src/screens/dashboard/myevents/event/food/FoodD
 import NotificationsScreen from "./src/screens/dashboard/notification/NotificationsScreen";
 import ProfileScreen from "./src/screens/dashboard/profile/ProfileScreen";
 import DetailEventScreen from "./src/screens/dashboard/myevents/event/DetailEventScreen";
+import InvitationScreen from "./src/screens/dashboard/myevents/event/billing/InvitationScreen";
+import PayBillingScreen from "./src/screens/dashboard/myevents/event/billing/PayBillingScreen";
+import BillPaidScreen from "./src/screens/dashboard/myevents/event/billing/BillPaidScreen";
 import AddFoodScreen from "./src/screens/dashboard/myevents/event/food/AddFoodScreen";
 import EventEditedScreen from "./src/screens/dashboard/myevents/event/EventEditedScreen";
+
 
 // Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -111,6 +115,10 @@ export default function App() {
                             <Stack.Screen name="FoodDeleted" component={FoodDeletedScreen} />
                             <Stack.Screen name="Notifications" component={NotificationsScreen} />
                             <Stack.Screen name="Profile" component={ProfileScreen} />
+                            <Stack.Screen name="Billing" component={BillingScreen} />
+                            <Stack.Screen name="BillSent" component={InvitationScreen} />
+                            <Stack.Screen name="BillingPayment" component={PayBillingScreen} />
+                            <Stack.Screen name="BillPaid" component={BillPaidScreen} />
                           </Stack.Navigator>
                         </UserProvider>
                       </NavigationContainer>

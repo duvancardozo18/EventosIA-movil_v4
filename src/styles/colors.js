@@ -1,4 +1,8 @@
 export const colors = {
+  white:{
+    100: "#FFFFFF",
+  },
+
   indigo: {
 
 

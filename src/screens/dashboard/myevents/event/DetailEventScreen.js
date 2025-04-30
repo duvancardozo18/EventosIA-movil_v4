@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 //import { useState, useEffect, useCallback } from "react";
 //import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
 //import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
-import { useState, useEffect } from "react";
+
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native"
 import { useNavigation, useRoute, useIsFocused } from "@react-navigation/native"
 
@@ -28,10 +28,9 @@ export default function CompleteEventScreen() {
 
   //console.log("Event ID received:", event_id);
 
-
   const [activeTab, setActiveTab] = useState("Participantes");
   const [event, setEvent] = useState(null);
-  const { 
+  const {
     fetchEvent,
     fetchEventParticipants,
     fetchEventResources,
@@ -69,41 +68,42 @@ export default function CompleteEventScreen() {
 
   const loadTabData = async () => {
     if (activeTab === "Participantes") {
-      setLoadingParticipants(true)
+      setLoadingParticipants(true);
       try {
-        const data = await fetchEventParticipants(event_id)
+        const data = await fetchEventParticipants(event_id);
         // Asegúrate de que siempre sea un array, incluso si es vacío o null/undefined
-        setParticipants(Array.isArray(data) ? data : [])
+        setParticipants(Array.isArray(data) ? data : []);
       } catch (error) {
         //console.error("Error al cargar participantes:", error)
         setParticipants([]) // Asegúrate de establecer un array vacío en caso de error
       } finally {
-        setLoadingParticipants(false)
+        setLoadingParticipants(false);
       }
     } else if (activeTab === "Recursos") {
-      setLoadingResources(true)
+      setLoadingResources(true);
       try {
-        const data = await fetchEventResources(event_id)
-        setResources(Array.isArray(data) ? data : [])
+        const data = await fetchEventResources(event_id);
+        setResources(Array.isArray(data) ? data : []);
       } catch (error) {
         //console.error("Error al cargar recursos:", error)
         setResources([])
       } finally {
-        setLoadingResources(false)
+        setLoadingResources(false);
       }
     } else if (activeTab === "Alimentos") {
-      setLoadingFoods(true)
+      setLoadingFoods(true);
       try {
-        const data = await fetchEventFoods(event_id)
-        setFoods(Array.isArray(data) ? data : [])
+        const data = await fetchEventFoods(event_id);
+        setFoods(Array.isArray(data) ? data : []);
       } catch (error) {
         //console.error("Error al cargar alimentos:", error)
         setFoods([])
       } finally {
-        setLoadingFoods(false)
+        setLoadingFoods(false);
       }
     }
-  }
+  };
+
 
   // Load tab data when activeTab changes
   // Solo cargar datos de pestaña cuando cambia la pestaña activa
@@ -112,6 +112,7 @@ export default function CompleteEventScreen() {
       loadTabData();
     }
   }, [activeTab, event_id, event]);
+
 
   // Ya no recargamos los datos de la pestaña al volver a la pantalla
   // Ya estamos recargando todo el evento, y los datos de la pestaña se cargan cuando cambia activeTab
@@ -124,28 +125,28 @@ export default function CompleteEventScreen() {
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const formatTime = (dateString) => {
     if (!dateString) return "Hora no disponible";
     const date = new Date(dateString);
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const formatDateRange = () => {
     if (!eventData) return "Fechas no disponibles";
-    
+
     const startDate = formatDate(eventData.start_time);
     const endDate = formatDate(eventData.end_time);
-    
+
     if (startDate === endDate) {
       return startDate;
     } else {
@@ -155,17 +156,17 @@ export default function CompleteEventScreen() {
 
   const formatTimeRange = () => {
     if (!eventData) return "Horario no disponible";
-    
+
     const startTime = formatTime(eventData.start_time);
     const endTime = formatTime(eventData.end_time);
-    
+
     return `${startTime} - ${endTime}`;
   };
 
   const handleSaveEvent = async () => {
     // por ahora el boton no hace nada, solo muestra un mensaje
     Alert.alert("Evento guardado", "El evento ha sido guardado correctamente.");
-  }
+  };
 
   const handleEditEvent = () => {
     // Navegar a la pantalla de edición de evento
@@ -179,16 +180,24 @@ export default function CompleteEventScreen() {
           "Confirmar eliminación",
           "¿Estás seguro que deseas eliminar este evento?",
           [
-            { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
-            { text: "Eliminar", style: "destructive", onPress: () => resolve(true) }
+            {
+              text: "Cancelar",
+              style: "cancel",
+              onPress: () => resolve(false),
+            },
+            {
+              text: "Eliminar",
+              style: "destructive",
+              onPress: () => resolve(true),
+            },
           ]
         );
       });
-  
+
       if (!confirm) return;
-  
+
       const success = await deleteEvent(event_id);
-  
+
       if (success) {
         navigation.navigate("EventDeleted");
       } else {
@@ -213,7 +222,7 @@ export default function CompleteEventScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.content}>
         {/* Parte superior del evento */}
-        <EventHeader 
+        <EventHeader
           eventData={eventData}
           formatDateRange={formatDateRange}
           formatTimeRange={formatTimeRange}
@@ -223,9 +232,7 @@ export default function CompleteEventScreen() {
         <EditEventButton onPress={handleEditEvent} />
 
         {/* Descripción del evento */}
-        <EventDescription 
-          description={eventData?.event_type_description} 
-        />
+        <EventDescription description={eventData?.event_type_description} />
 
         {/* Sección de pestañas */}
         <TabSection
@@ -243,7 +250,10 @@ export default function CompleteEventScreen() {
 
         <Button
           title="Facturación"
-          onPress={handleSaveEvent}
+          onPress={() => {
+            // Usa el mismo nombre de propiedad que estás esperando en BillingScreen
+            navigation.navigate("Billing", { eventId: event_id });
+          }}
           backgroundColor={colors.indigo[500]}
           color="white"
           width="75%"
@@ -264,7 +274,6 @@ export default function CompleteEventScreen() {
           fontWeight="600"
           marginTop={16}
         />
-
       </ScrollView>
 
       <BottomTabBar activeTab="events" />
@@ -276,20 +285,20 @@ export default function CompleteEventScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
-    paddingHorizontal: 16,  // un poco de margen a los lados
-    paddingBottom: 100,     // espacio libre debajo de los botones
+    paddingHorizontal: 16, // un poco de margen a los lados
+    paddingBottom: 100, // espacio libre debajo de los botones
   },
   loadingText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
     color: colors.gray[500],
     marginTop: 20,
-  }
+  },
 });

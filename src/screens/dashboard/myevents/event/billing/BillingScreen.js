@@ -1,99 +1,213 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { Feather } from "@expo/vector-icons"
-import { colors } from "../../../../../styles/colors"
-import { useEvent } from "../../../../../contexts/EventContext"
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Feather } from "@expo/vector-icons";
+import { colors } from "../../../../../styles/colors";
+import { useEvent } from "../../../../../contexts/EventContext";
 
 const BillingScreen = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { eventId } = route.params
-  const { getEvent, getEventBilling, removeEventClient } = useEvent()
+  const navigation = useNavigation();
+  const route = useRoute();
+  console.log("route.params recibido:", route.params);
+  const eventId = route.params?.eventId;
+  console.log("eventId extraído:", eventId);
+  const { fetchEvent } = useEvent();
 
-  const [event, setEvent] = useState(null)
-  const [billing, setBilling] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { getEvent, getEventBilling, removeEventClient } = useEvent();
+
+  const [event, setEvent] = useState(null);
+  const [billing, setBilling] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadEventData()
-  }, [eventId])
+    // Fetch event details when component mounts
+    if (eventId) {
+      const loadEventData = async () => {
+        const eventData = await fetchEvent(eventId);
+        if (eventData) {
+          setEvent(eventData);
+          setLoading(false);
+        } else {
+          Alert.alert("Error", "No se pudo cargar la información del evento");
+          navigation.goBack();
+        }
+      };
 
-  const loadEventData = async () => {
-    try {
-      const eventData = await getEvent(eventId)
-      setEvent(eventData)
-
-      const billingData = await getEventBilling(eventId)
-      setBilling(billingData)
-    } catch (error) {
-      Alert.alert("Error", "No se pudo cargar la información de facturación")
-    } finally {
-      setLoading(false)
+      loadEventData();
+    } else {
+      Alert.alert("Error", "No se recibió ID de evento");
+      navigation.goBack();
     }
-  }
+  }, [eventId]);
 
   const handleLinkClient = () => {
-    navigation.navigate("LinkClient", { eventId })
-  }
+    navigation.navigate("LinkClient", eventId);
+  };
+  const handlePayBill = () => {
+    navigation.navigate("BillingPayment");
+  };
 
   const handleRemoveClient = async () => {
-    Alert.alert("Eliminar cliente", "¿Estás seguro de que deseas eliminar el cliente asociado a este evento?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setLoading(true)
-            await removeEventClient(eventId)
-            navigation.navigate("ClientDeleted", { eventId })
-          } catch (error) {
-            Alert.alert("Error", "No se pudo eliminar el cliente")
-            setLoading(false)
-          }
+    Alert.alert(
+      "Eliminar cliente",
+      "¿Estás seguro de que deseas eliminar el cliente asociado a este evento?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await removeEventClient(eventId);
+              navigation.navigate("ClientDeleted", { eventId });
+            } catch (error) {
+              Alert.alert("Error", "No se pudo eliminar el cliente");
+              setLoading(false);
+            }
+          },
         },
-      },
-    ])
-  }
+      ]
+    );
+  };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
-    )
+    );
   }
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Facturación</Text>
       </View>
 
       <View style={styles.eventInfo}>
-        <Text style={styles.eventName}>{event?.name}</Text>
-        <Text style={styles.eventDate}>
-          {new Date(event?.date).toLocaleDateString("es-ES", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </Text>
+        <Text style={styles.billingTitle}>Facturación</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Evento</Text>
+          <Text style={styles.infoValue}>{event?.event_name}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Dirección</Text>
+          <Text style={styles.infoValue}>
+            {event?.location_name}, {event?.location_address}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Modalidad</Text>
+          <Text style={styles.infoValue}>{event?.event_type}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Max. Participantes</Text>
+          <Text style={styles.infoValue}>{event?.max_participants}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Fecha de Inicio</Text>
+          <Text style={styles.infoValue}>
+            {new Date(event?.start_time).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })}{" "}
+            -{" "}
+            {new Date(event?.start_time).toLocaleTimeString("es-ES", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Fecha de Finalización</Text>
+          <Text style={styles.infoValue}>
+            {new Date(event?.end_time).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })}{" "}
+            -{" "}
+            {new Date(event?.end_time).toLocaleTimeString("es-ES", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </Text>
+        </View>
+        <Text style={styles.sectionTitle}>Costos</Text>
+
+        <View style={styles.costRow}>
+          <Text style={styles.costLabel}>Logística</Text>
+          <Text style={styles.costValue}>$1.500.000</Text>
+        </View>
+
+        <View style={styles.costRow}>
+          <Text style={styles.costLabel}>Alquiler del Sitio</Text>
+          <Text style={styles.costValue}>$2.000.000</Text>
+        </View>
+
+        <View style={styles.costRow}>
+          <Text style={styles.costLabel}>Alimentación</Text>
+          <Text style={styles.costValue}>$2.500.000</Text>
+        </View>
+
+        <View style={styles.costRow}>
+          <Text style={styles.costLabel}>Recursos</Text>
+          <Text style={styles.costValue}>$5.000.000</Text>
+        </View>
+
+        <View style={styles.separator} />
+
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>TOTAL</Text>
+          <Text style={styles.totalValue}>$11.000.000</Text>
+        </View>
       </View>
+
 
       {!billing?.client ? (
         <View style={styles.noClientContainer}>
           <Feather name="user-x" size={60} color={colors.textSecondary} />
           <Text style={styles.noClientText}>No hay cliente asociado</Text>
-          <Text style={styles.noClientSubtext}>Enlaza un cliente para generar cotizaciones y facturas</Text>
-          <TouchableOpacity style={styles.linkButton} onPress={handleLinkClient}>
+          <Text style={styles.noClientSubtext}>
+            Enlaza un cliente para generar cotizaciones y facturas
+          </Text>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={handleLinkClient}
+          >
             <Text style={styles.linkButtonText}>Enlazar cliente</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={handlePayBill}
+          >
+            <Text style={styles.linkButtonText}>PAGAR</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -109,19 +223,29 @@ const BillingScreen = () => {
             <View style={styles.clientInfo}>
               <Text style={styles.clientName}>{billing.client.name}</Text>
               <Text style={styles.clientDetail}>
-                <Feather name="mail" size={16} color={colors.textSecondary} /> {billing.client.email}
+                <Feather name="mail" size={16} color={colors.textSecondary} />{" "}
+                {billing.client.email}
               </Text>
               <Text style={styles.clientDetail}>
-                <Feather name="phone" size={16} color={colors.textSecondary} /> {billing.client.phone}
+                <Feather name="phone" size={16} color={colors.textSecondary} />{" "}
+                {billing.client.phone}
               </Text>
               {billing.client.company && (
                 <Text style={styles.clientDetail}>
-                  <Feather name="briefcase" size={16} color={colors.textSecondary} /> {billing.client.company}
+                  <Feather
+                    name="briefcase"
+                    size={16}
+                    color={colors.textSecondary}
+                  />{" "}
+                  {billing.client.company}
                 </Text>
               )}
             </View>
 
-            <TouchableOpacity style={styles.removeButton} onPress={handleRemoveClient}>
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={handleRemoveClient}
+            >
               <Feather name="trash-2" size={16} color={colors.danger} />
               <Text style={styles.removeButtonText}>Eliminar cliente</Text>
             </TouchableOpacity>
@@ -134,10 +258,16 @@ const BillingScreen = () => {
               billing.quotes.map((quote, index) => (
                 <View key={index} style={styles.quoteItem}>
                   <View style={styles.quoteHeader}>
-                    <Text style={styles.quoteTitle}>Cotización #{quote.id}</Text>
-                    <Text style={styles.quoteDate}>{new Date(quote.date).toLocaleDateString("es-ES")}</Text>
+                    <Text style={styles.quoteTitle}>
+                      Cotización #{quote.id}
+                    </Text>
+                    <Text style={styles.quoteDate}>
+                      {new Date(quote.date).toLocaleDateString("es-ES")}
+                    </Text>
                   </View>
-                  <Text style={styles.quoteAmount}>${quote.amount.toFixed(2)}</Text>
+                  <Text style={styles.quoteAmount}>
+                    ${quote.amount.toFixed(2)}
+                  </Text>
                   <View style={styles.quoteActions}>
                     <TouchableOpacity style={styles.quoteButton}>
                       <Feather name="eye" size={16} color={colors.primary} />
@@ -167,10 +297,16 @@ const BillingScreen = () => {
               billing.invoices.map((invoice, index) => (
                 <View key={index} style={styles.invoiceItem}>
                   <View style={styles.invoiceHeader}>
-                    <Text style={styles.invoiceTitle}>Factura #{invoice.id}</Text>
-                    <Text style={styles.invoiceDate}>{new Date(invoice.date).toLocaleDateString("es-ES")}</Text>
+                    <Text style={styles.invoiceTitle}>
+                      Factura #{invoice.id}
+                    </Text>
+                    <Text style={styles.invoiceDate}>
+                      {new Date(invoice.date).toLocaleDateString("es-ES")}
+                    </Text>
                   </View>
-                  <Text style={styles.invoiceAmount}>${invoice.amount.toFixed(2)}</Text>
+                  <Text style={styles.invoiceAmount}>
+                    ${invoice.amount.toFixed(2)}
+                  </Text>
                   <View style={styles.invoiceStatus}>
                     <View
                       style={[
@@ -178,16 +314,16 @@ const BillingScreen = () => {
                         invoice.status === "paid"
                           ? styles.paidBadge
                           : invoice.status === "pending"
-                            ? styles.pendingBadge
-                            : styles.canceledBadge,
+                          ? styles.pendingBadge
+                          : styles.canceledBadge,
                       ]}
                     >
                       <Text style={styles.statusText}>
                         {invoice.status === "paid"
                           ? "Pagada"
                           : invoice.status === "pending"
-                            ? "Pendiente"
-                            : "Cancelada"}
+                          ? "Pendiente"
+                          : "Cancelada"}
                       </Text>
                     </View>
                   </View>
@@ -215,13 +351,14 @@ const BillingScreen = () => {
         </View>
       )}
     </ScrollView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    marginHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -229,6 +366,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: {
+    marginTop: 30,
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
@@ -244,13 +382,22 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   eventInfo: {
-    padding: 16,
-    backgroundColor: colors.white,
-    marginBottom: 16,
-    borderRadius: 8,
+    padding: 20,
+    backgroundColor: "#FFFFFF", // Fondo blanco puro
+    borderRadius: 16,            // Esquinas bien redondeadas
+    marginTop: 24,
+    marginBottom: 18,
     marginHorizontal: 16,
-    marginTop: 16,
+    // Sombra suave para iOS
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 10,
+    // Sombra para Android
+    elevation: 4,
   },
+  
+  
   eventName: {
     fontSize: 18,
     fontWeight: "bold",
@@ -283,13 +430,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   linkButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.indigo[500],
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 10,
+    marginBottom: 10
   },
   linkButtonText: {
-    color: colors.white,
+    color: colors.white[100],
     fontSize: 16,
     fontWeight: "600",
   },
@@ -310,9 +458,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: colors.text,
+    marginVertical: 15,
   },
   clientInfo: {
     marginBottom: 16,
@@ -475,7 +624,63 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-})
+  billingTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 16,
+    color: colors.text,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  costRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  costLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  costValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  separator: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0", // gris muy clarito
+    borderStyle: "dashed",
+    marginVertical: 20,
+  },
+  
+  
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: colors.indigo[500], // Azul brillante
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: colors.indigo[500], // Azul brillante
+  },
+});
 
-export default BillingScreen
-
+export default BillingScreen;
