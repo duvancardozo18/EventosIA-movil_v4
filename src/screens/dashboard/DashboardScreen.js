@@ -11,6 +11,8 @@ import BottomTabBar from "../../components/BottomTabBar"
 import { colors } from "../../styles/colors"
 import { FontAwesome6 } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
+import { Linking } from 'react-native';
+
 
 export default function DashboardScreen() {
   const navigation = useNavigation()
@@ -18,6 +20,7 @@ export default function DashboardScreen() {
   const { user } = useAuth()
   const [hasEvents, setHasEvents] = useState(false)
   const scrollRef = useRef(null)
+
 
     // Recargar eventos automáticamente al enfocarse la pantalla
     useFocusEffect(
@@ -52,25 +55,27 @@ export default function DashboardScreen() {
       <TouchableOpacity 
         style={styles.eventCard} 
         onPress={() => {
-          navigation.navigate("EventDetail", item.id_event)
+          navigation.navigate("EventDetail", { event_id: item.id_event })
         }}
       >
-        <View style={styles.eventImageContainer}>
-          {item.image_url &&
-          Array.isArray(item.image_url) &&
-          item.image_url.length > 0 ? (
-            <Image
-              source={{ uri: item.image_url[0] }}
-              style={styles.eventImage}
-              resizeMode="cover"
-            />
-          ) : null}
-          <View style={styles.dateTag}>
-            <Text style={styles.eventStateText}>
-              {item.state ? item.state : "Estado no disponible"}
-            </Text>
+      <View style={styles.eventImageContainer}>
+        {item.image_url && Array.isArray(item.image_url) && item.image_url.length > 0 ? (
+          <Image
+            source={{ uri: item.image_url[0] }}
+            style={styles.eventImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.noImageContainer}>
+            <Text style={styles.noImageText}>Sin imagen</Text>
           </View>
+        )}
+        <View style={styles.dateTag}>
+          <Text style={styles.eventStateText}>
+            {item.state ? item.state : "Estado no disponible"}
+          </Text>
         </View>
+      </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventTitle} numberOfLines={1}>
             {item.name}
@@ -110,12 +115,29 @@ export default function DashboardScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.createButtonContainer}>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => navigation.navigate("CreateEvent")}
-          >
-            <Text style={styles.createButtonText}>CREAR EVENTO</Text>
-          </TouchableOpacity>
+        
+        {user?.role === "User" && ( 
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => {
+                const phoneNumber = '573173453174'; 
+                const message = 'Hola, necesito comunicarme con un gestor.';
+                const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                Linking.openURL(url).catch(err => console.error("Error al abrir WhatsApp", err));
+              }}
+            >
+              <Text style={styles.createButtonText}>COMUNICARME CON UN GESTOR</Text>
+            </TouchableOpacity>
+          )}
+
+        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => navigation.navigate("CreateEvent")}
+            >
+              <Text style={styles.createButtonText}>CREAR EVENTO</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {error ? (
@@ -175,17 +197,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+   
   },
   header: {
     backgroundColor: colors.indigo[600],
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
+    paddingBottom: 26,
   },
   headerTitle: {
     color: "white",
     fontSize: 20,
     fontWeight: "bold",
+    paddingTop: 36,
   },
   content: {
     flex: 1,
@@ -354,6 +379,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  noImageContainer: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: colors.indigo[100],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noImageText: {
+    color: colors.indigo[500],
+    fontSize: 12,
   },
 })
 

@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import { useIsFocused } from '@react-navigation/native'; 
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, TextInput, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
@@ -20,14 +20,17 @@ export default function ParticipantListScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingParticipant, setDeletingParticipant] = useState(false); // Nuevo loading local
 
+  const isFocused = useIsFocused();
+
   useEffect(() => {
-    const loadParticipants = async () => {
-      const data = await fetchEventParticipants(id);
-      setParticipants(Array.isArray(data) ? data : []);
-    };
-  
-    loadParticipants();
-  }, [id]);  
+    if (isFocused) {
+      const loadParticipants = async () => {
+        const data = await fetchEventParticipants(id);
+        setParticipants(Array.isArray(data) ? data : []);
+      };
+      loadParticipants();
+    }
+  }, [isFocused, id]);
 
   const handleDeleteParticipant = (participantId) => {
     Alert.alert(
@@ -48,9 +51,11 @@ export default function ParticipantListScreen() {
     try {
       setDeletingParticipant(true);
       const success = await deleteParticipant(user.id_user, { id_participants: participantId });
-
+  
       if (success) {
-        navigation.navigate("InvitationDeleted", { eventId: id });
+        // Recargar los participantes en lugar de navegar
+        const updatedParticipants = await fetchEventParticipants(id);
+        setParticipants(Array.isArray(updatedParticipants) ? updatedParticipants : []);
       } else {
         Alert.alert("Error", "No se pudo eliminar el participante");
       }
@@ -72,23 +77,44 @@ export default function ParticipantListScreen() {
     <View style={styles.participantItem}>
       <View style={styles.participantInfo}>
         <View style={styles.avatar}>
-          <Image source={{ uri: "https://via.placeholder.com/48" }} style={styles.avatarImage} />
+          <Icon name="user" size={40} color="#B0B0B0" />
         </View>
-        <View>
-          <Text style={styles.participantName}>{item.user_name || "Usuario"}</Text>
+  
+        <View style={styles.participantDetails}>
+          <Text style={styles.participantName}>
+            {item.user_name || "Usuario"} {item.user_last_name}
+          </Text>
           <Text style={styles.participantEmail}>{item.email || "Sin correo"}</Text>
-        </View>
-      </View>
-
-      <View style={styles.participantActions}>
-        <View style={[styles.statusTag, item.participant_status_id === 2 ? styles.confirmedTag : styles.invitedTag]}>
-          <Text style={[
+          <View style={[
+            styles.statusTag, 
+            item.participant_status_id === 2 ? styles.confirmedTag : styles.invitedTag
+          ]}>
+            <Text style={[
               styles.statusTagText,
               item.participant_status_id === 2 ? styles.confirmedTagText : styles.invitedTagText,
             ]}>
-            {item.participant_status_id === 1 ? "Invitado" : item.participant_status_id === 2 ? "Confirmado" : "Desconocido"}
-          </Text>
+              {item.status_name}
+            </Text>
+          </View>
         </View>
+      </View>
+  
+      <View style={styles.participantActions}>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => {
+          //console.log("item:", item); // Verifica que 'item' tiene el campo 'id_participants'
+          navigation.navigate("ParticipantStatus", {
+            participantId: item.id_participants,  // Usa 'id_participants' en lugar de 'id'
+            eventId: id,
+          });
+        }}
+      >
+        <Icon name="edit-2" size={20} color={colors.indigo[500]} />
+      </TouchableOpacity>
+
+
+
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteParticipant(item.id_participants)}
@@ -98,7 +124,6 @@ export default function ParticipantListScreen() {
       </View>
     </View>
   );
-
   if (loading && !deletingParticipant) {
     return (
       <View style={styles.loadingContainer}>
@@ -167,6 +192,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
+    marginTop: 30,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[200],
   },
@@ -228,8 +254,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 9,
+    paddingBottom: 9, 
+    borderBottomWidth: 1, 
+    borderBottomColor: colors.gray[200], 
   },
+
   participantInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -241,28 +271,34 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginRight: 12,
     backgroundColor: colors.gray[200],
+    alignItems: "center",
   },
   avatarImage: {
     width: "100%",
     height: "100%",
   },
   participantName: {
-    fontWeight: "500",
+    fontWeight: "700",
+    fontSize: 16,
   },
   participantEmail: {
     color: colors.gray[500],
-    fontSize: 14,
-  },
+    fontSize: 15,
+    width: 250,        
+  },  
   participantActions: {
     flexDirection: "row",
     alignItems: "center",
+    marginRight: 16,
   },
+  
   statusTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 8,
-  },
+    paddingHorizontal: 12,  
+    paddingVertical: 6,    
+    borderRadius: 3,       
+    marginTop: 12,
+    alignSelf: 'flex-start',
+},
   confirmedTag: {
     backgroundColor: colors.indigo[500],
   },
@@ -270,7 +306,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[100],
   },
   statusTagText: {
-    fontSize: 12,
+    fontSize: 15,  
+    lineHeight: 18, 
   },
   confirmedTagText: {
     color: "white",
@@ -294,4 +331,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  
 });

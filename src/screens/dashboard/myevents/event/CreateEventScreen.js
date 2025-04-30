@@ -11,6 +11,7 @@ import DateTimePicker from "@react-native-community/datetimepicker"
 import { useEvent } from "../../../../contexts/EventContext"
 import { useLocation } from "../../../../contexts/LocationContext"
 import { useEventType } from "../../../../contexts/EventTypeContext"
+import { useCategory } from "../../../../contexts/CategoryContext"
 import { useAuth } from "../../../../contexts/AuthContext"
 import { colors } from "../../../../styles/colors"
 import { Alert } from 'react-native';
@@ -48,6 +49,8 @@ export default function CreateEventScreen() {
   const [showEndDate, setShowEndDate] = useState(false)
   const [showEndTime, setShowEndTime] = useState(false)
 
+  const { categories, getCategories } = useCategory()
+
   useEffect(() => {
     const loadData = async () => {
       if (user && user.id) {
@@ -56,6 +59,8 @@ export default function CreateEventScreen() {
           user_id_created_by: user.id,
         }))
       }
+      // Cargar categorías
+      await getCategories()
     }
 
     loadData()
@@ -178,16 +183,33 @@ export default function CreateEventScreen() {
 
 
       console.log("Datos iniciales del formulario:", formData);
+
+      // Convertir fechas al formato local (YYYY-MM-DD HH:mm:ss)
+      const formatDateToLocal = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const seconds = "00";
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      };
+
+      const formattedStartTime = formatDateToLocal(formData.start_time);
+      const formattedEndTime = formatDateToLocal(formData.end_time);
+
+    console.log("Fechas formateadas (local):", formattedStartTime, formattedEndTime);
   
       // 1. Crear tipo de evento
       const typeEventResponse = await createEventType({
         name: formData.name,
         description: formData.description || "",
         event_type: formData.event_modality || "",
-        start_time: formData.start_time || "",
-        end_time: formData.end_time || "",
+        start_time: formattedStartTime, // Usar formato local
+        end_time: formattedEndTime,    // Usar formato local
         video_conference_link: formData.video_conference_link || "",
         price: formData.price_event || "",
+        category_id: formData.categories_id || "",
         max_participants: formData.max_participants || 0
       });
   
@@ -257,11 +279,39 @@ export default function CreateEventScreen() {
       );
       return;
     }
-  
+
+    if (currentStep === 1 && !formData.categories_id) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor seleccione una categoría",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (currentStep === 2 && !formData.event_modality) {
       Alert.alert(
         "Campo requerido",
         "Por favor seleccione el tipo de evento",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (currentStep === 2 && !formData.max_participants) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese el numero máximo de participantes",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+
+    if (currentStep === 2 && !formData.price_event) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese el precio del evento",
         [{ text: "OK" }]
       );
       return;
@@ -275,6 +325,19 @@ export default function CreateEventScreen() {
       );
       return;
     }
+
+    if (currentStep === 2 && formData.start_time >= formData.end_time) {
+      Alert.alert(
+        "Fecha inválida",
+        "La fecha de finalización no puede ser anterior o igual a la fecha de inicio",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+  
+
+
+
   
   
     setCurrentStep(currentStep + 1);
@@ -286,7 +349,7 @@ export default function CreateEventScreen() {
   const renderStep1 = () => (
     <>
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Nombre del evento *</Text>
+        <Text style={styles.label}>Nombre del evento <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.name}
@@ -308,6 +371,25 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
+      <Text style={styles.label}>Categoria <Text style={{ color: 'red' }}>*</Text></Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.categories_id}
+            onValueChange={(value) => handleChange("categories_id", value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Seleccionar categoría" value={null} />
+            {categories.map((category) => (
+              <Picker.Item 
+                key={category.id_category} 
+                label={category.name} 
+                value={category.id_category} 
+              />
+            ))}
+          </Picker>
+        </View>
+      </View>
+      <View style={styles.formGroup}>
         <Text style={styles.label}>Imagen</Text>
         <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
           <Text style={styles.imagePickerText}>
@@ -323,7 +405,7 @@ export default function CreateEventScreen() {
   const renderStep2 = () => (
     <>
     <View style={styles.formGroup}>
-        <Text style={styles.label}>Tipo de evento *</Text>
+        <Text style={styles.label}>Tipo de evento <Text style={{ color: 'red' }}>*</Text></Text>
         <View style={styles.pickerContainer}>
             <Picker
                 selectedValue={formData.event_modality}
@@ -331,14 +413,14 @@ export default function CreateEventScreen() {
                 style={styles.picker}
             >
                 <Picker.Item label="Seleccionar tipo de evento" value="" />
-                <Picker.Item label="Virtual" value="virtual" />
-                <Picker.Item label="Presencial" value="presencial" />
-                <Picker.Item label="Híbrido" value="hibrido" />
+                <Picker.Item label="Virtual" value="Virtual" />
+                <Picker.Item label="Presencial" value="Presencial" />
+                <Picker.Item label="Híbrido" value="Hibrido" />
             </Picker>
         </View>
     </View>
 
-    {(formData.event_modality === 'virtual' || formData.event_modality === 'hibrido') && (
+    {(formData.event_modality === 'Virtual' || formData.event_modality === 'Hibrido') && (
         <View style={styles.formGroup}>
             <Text style={styles.label}>Enlace del meet</Text>
             <TextInput
@@ -352,7 +434,7 @@ export default function CreateEventScreen() {
 
 
     <View style={styles.dateTimeRow}>
-      <Text style={styles.dateTimeLabel}>Inicio</Text>
+      <Text style={styles.dateTimeLabel}>Inicio <Text style={{ color: 'red' }}>*</Text></Text>
       <TouchableOpacity 
         style={styles.dateInput} 
         onPress={() => setShowStartDate(true)}
@@ -376,7 +458,7 @@ export default function CreateEventScreen() {
     </View>
 
     <View style={styles.dateTimeRow}>
-      <Text style={styles.dateTimeLabel}>Fin</Text>
+      <Text style={styles.dateTimeLabel}>Fin <Text style={{ color: 'red' }}>*</Text></Text>
       <TouchableOpacity 
         style={styles.dateInput} 
         onPress={() => setShowEndDate(true)}
@@ -434,7 +516,7 @@ export default function CreateEventScreen() {
     </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Número máximo de participantes</Text>
+        <Text style={styles.label}>Número máximo de participantes <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.max_participants}
@@ -445,7 +527,9 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Precio del evento (NO incluye: recursos, alimentacion, etc)</Text>
+        <Text style={styles.label}>
+          Precio del evento <Text style={{ color: 'red' }}>*</Text> (NO incluye: recursos, alimentación, etc)
+        </Text>
         <TextInput
           style={styles.input}
           value={formData.price_event}
@@ -454,6 +538,7 @@ export default function CreateEventScreen() {
           keyboardType="numeric"
         />
       </View>
+
     </>
   )
 
@@ -461,7 +546,7 @@ export default function CreateEventScreen() {
     <>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Nombre del lugar *</Text>
+        <Text style={styles.label}>Nombre del lugar <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.location_name}
@@ -471,7 +556,7 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Dirección *</Text>
+        <Text style={styles.label}>Dirección <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.location_address}

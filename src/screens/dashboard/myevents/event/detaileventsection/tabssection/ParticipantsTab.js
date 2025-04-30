@@ -13,34 +13,55 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor
     return <Text style={styles.loadingText}>Cargando participantes...</Text>;
   }
 
+  const pendingCount = participants.filter(p => p.status_name === "Pendiente").length;
   const confirmedCount = participants.filter(p => p.status_name === "Confirmado").length;
-  const invitedCount = participants.filter(p => p.status_name === "Invitado").length;
+  const attendedCount = participants.filter(p => p.status_name === "Asistió").length;
+  const canceledCount = participants.filter(p => p.status_name === "Cancelado").length;
 
   return (
     <>
-      <View style={styles.statsContainer}>
-        <View style={styles.statsRow}>
-          <StatItem 
-            label="Confirmados" 
-            value={confirmedCount} 
-            isConfirmed={true}
-            icon="check-circle"
-          />
-          <StatItem 
-            label="Invitados" 
-            value={invitedCount} 
-            isConfirmed={false}
-            icon="message-circle"
-          />
-        </View>
-        {isGestor && <AddButton onPress={handleAddPress} />}
+ <View style={styles.container}>
+      {/* Primera fila */}
+      <View style={styles.row}>
+       
+        <StatItem 
+          label="Confirmados" 
+          value={confirmedCount} 
+          isConfirmed={true}
+          icon="check-circle" 
+        />
+         <StatItem 
+          label="Pendientes" 
+          value={pendingCount} 
+          isConfirmed={true}
+          icon="clock" 
+        />
       </View>
 
+      {/* Segunda fila */}
+      <View style={styles.row}>
+        <StatItem 
+          label="Asistió" 
+          value={attendedCount} 
+          isConfirmed={false}
+          icon="user-check" 
+        />
+        <StatItem 
+          label="Cancelado" 
+          value={canceledCount} 
+          isConfirmed={false}
+          icon="x-circle" 
+        />
+      </View>
+    </View>
+
+      {/* Botón de agregar 
+    {isGestor && <AddButton onPress={handleAddPress} />}*/}
       {/* Participantes o mensaje vacío */}
       {participants.length > 0 ? (
-        participants.slice(0, 3).map(participant => (
+        participants.slice(0, 3).map((participant, index) => (
           <ParticipantItem 
-            key={participant.id} 
+            key={participant.id ?? `participant-${index}`} 
             participant={participant} 
           />
         ))
@@ -75,16 +96,20 @@ const ParticipantItem = ({ participant }) => {
   return (
     <View style={styles.participantContainer}>
       <View style={styles.participantInfo}>
-        <Image source={{ uri: participant.avatar || "https://via.placeholder.com/48" }} style={styles.avatarImage} />
+        <Icon name="user" size={40} color="#B0B0B0" />
         <View style={styles.participantText}>
-          <Text style={styles.participantName}>{participant.user_name || "Usuario"}</Text>
+          <Text style={styles.participantName}>
+            {participant.user_name || "Usuario"} {participant.user_last_name}
+            </Text>
+             <Text style={styles.participantEmail}>{participant.email || "Sin correo"}</Text>
         </View>
+        
       </View>
       
       <View style={styles.participantActions}>
         <View style={[styles.statusTag, isConfirmed ? styles.confirmedTag : styles.invitedTag]}>
-          <Text style={[styles.statusTagText, isConfirmed ? styles.confirmedTagText : styles.invitedTagText]}>
-            {isConfirmed ? "Confirmado" : "Invitado"}
+         <Text style={[styles.statusTagText,participant.participant_status_id === 2 ? styles.confirmedTagText : styles.invitedTagText,]}>
+          {participant.status_name}
           </Text>
         </View>
       </View>
@@ -162,9 +187,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   participantActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+   
   },
   avatarImage: {
     width: 48,
@@ -195,11 +218,21 @@ const styles = StyleSheet.create({
   viewAllButton: {
     alignSelf: 'flex-end',
     paddingVertical: 8,
-    marginTop: 8, // un poquito de separación
+    marginTop: 8, 
   },  
   viewAllText: {
     color: colors.indigo[500],
     fontWeight: '500',
+  },
+  container: {
+    flexDirection: 'column', 
+    gap: 12, 
+    marginBottom: 26,
+  },
+  row: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    gap: 1, 
   },
 });
 

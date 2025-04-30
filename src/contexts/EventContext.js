@@ -119,11 +119,11 @@ export const EventProvider = ({ children }) => {
     }
   }
 
-  const assignFoodToEvent = async (eventId, foodId) => {
+  const assignFoodToEvent = async (data) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await foodService.assignFoodToEvent({ id_event: eventId, id_food: foodId })
+      const response = await foodService.assignFoodToEvent(data)
       return response.data
     } catch (err) {
       setError(err.response?.data?.message || "Error al asignar alimento al evento")
@@ -247,6 +247,33 @@ export const EventProvider = ({ children }) => {
     }
   }
 
+
+  const updateEventStatus = async (id, eventStateId) => {
+    try {
+      setLoading(true)
+      setError(null)
+  
+      // Llamada al servicio para actualizar el estado del evento
+      const response = await eventService.updateEventStatus(id, { event_state_id: eventStateId })
+      
+      // Actualizar el estado de los eventos en el contexto
+      setEvents(events.map((event) => (event.id === id ? { ...event, event_state_id: eventStateId } : event)))
+      
+      // Si el evento actual es el que se está actualizando, actualizar el estado también
+      if (currentEvent && currentEvent.id === id) {
+        setCurrentEvent({ ...currentEvent, event_state_id: eventStateId })
+      }
+  
+      return response.data
+    } catch (err) {
+      setError(err.response?.data?.message || "Error al actualizar el estado del evento")
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+
   return (
     <EventContext.Provider
       value={{
@@ -269,6 +296,7 @@ export const EventProvider = ({ children }) => {
         registerParticipant,
         updateParticipant,
         deleteParticipant,
+        updateEventStatus,
       }}
     >
       {children}

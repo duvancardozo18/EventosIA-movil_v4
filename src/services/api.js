@@ -44,10 +44,27 @@ export const authService = {
 // Servicios de usuarios
 export const userService = {
   getUsers: () => api.get("/users"),
-  getUser: (email) => api.get(`/users/${email}`),
+  getUser: async (email) => {
+    try {
+      const response = await api.get(`/users/${email}`)
+      if (response.status === 200 && response.data.usuario) {
+        return response.data
+      }
+      return null
+    } catch (error) {
+      // Si el error es 404 (usuario no encontrado), simplemente devolver null
+      if (error.response && error.response.status === 404) {
+        return null
+      }
+      // Si es otro error (problema de servidor, etc.), sí mostrar error
+      console.error("Error obteniendo usuario:", error)
+      return null
+    }
+  },
   createUser: (userData) => api.post("/users", userData),
   updateUser: (id, userData) => api.put(`/users/${id}/rol`, userData),
   deleteUser: (email) => api.delete("/delete-user", { data: { email } }),
+  sendCredentials: (invitationData) => api.post("/credentials", invitationData),
 }
 
 // Servicios de eventos
@@ -61,6 +78,10 @@ export const userService = {
         }
       });
     },
+    updateEventStatus: (eventId, body) => {
+      return api.put(`/events/${eventId}/status`, body);
+    },
+
     deleteEvent: (id) => api.delete(`/events/${id}`),
     createEvent: (formData) => {
     // Crear FormData para manejar la imagen y otros campos
@@ -117,6 +138,7 @@ export const resourceService = {
 // Servicios de participantes
 export const participantService = {
   getParticipants: () => api.get("/participants/list"),
+  getParticipant: (id) => api.get(`/participants/${id}`),
   getEventParticipants: (eventId) => api.get(`/participants/event/${eventId}`),
   registerParticipant: (data) => api.post("/participants/register", data),
   updateParticipant: (userId, data) => api.put(`/participants/update/${userId}`, data),
@@ -141,8 +163,13 @@ export const locationService = {
   // deleteLocation: (id) => api.delete(`/locations/${id}`), // opcional
 }
 
+// Servicios de categorías
 export const categoryService = {
-  getCategories: () => api.get("/categories"),
+  getCategories: () => api.get('/categories'),
+  getCategory: (id) => api.get(`/categories/${id}`),
+  createCategory: (data) => api.post('/categories', data),
+  updateCategory: (id, data) => api.put(`/categories/${id}`, data),
+  deleteCategory: (id) => api.delete(`/categories/${id}`),
 }
 
 export const invitationService = {
