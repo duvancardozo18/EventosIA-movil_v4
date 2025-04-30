@@ -98,7 +98,6 @@ export default function App() {
                             <Stack.Screen name="InvitationDeleted" component={InvitationDeletedScreen} />
                             <Stack.Screen name="EventStatus" component={EventStatusScreen} />
                             <Stack.Screen name="EditEvent" component={EditEventScreen} />
-                            <Stack.Screen name="Billing" component={BillingScreen} />
                             <Stack.Screen name="LinkClient" component={LinkClientScreen} />
                             <Stack.Screen name="QuoteSent" component={QuoteSentScreen} />
                             <Stack.Screen name="ClientDeleted" component={ClientDeletedScreen} />

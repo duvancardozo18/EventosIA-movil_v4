@@ -4,6 +4,7 @@
 //import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
 //import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
 
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native"
 import { useNavigation, useRoute, useIsFocused } from "@react-navigation/native"
 
