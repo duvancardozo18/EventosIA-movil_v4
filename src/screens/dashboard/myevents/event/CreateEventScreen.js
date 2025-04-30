@@ -298,6 +298,25 @@ export default function CreateEventScreen() {
       return;
     }
 
+    if (currentStep === 2 && !formData.max_participants) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese el numero máximo de participantes",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+
+    if (currentStep === 2 && !formData.price_event) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese el precio del evento",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (currentStep === 2 && (!formData.start_time || !formData.end_time)) {
       Alert.alert(
         "Campo requerido",
@@ -330,7 +349,7 @@ export default function CreateEventScreen() {
   const renderStep1 = () => (
     <>
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Nombre del evento *</Text>
+        <Text style={styles.label}>Nombre del evento <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.name}
@@ -352,7 +371,7 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-      <Text style={styles.label}>Categoria *</Text>
+      <Text style={styles.label}>Categoria <Text style={{ color: 'red' }}>*</Text></Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.categories_id}
@@ -386,7 +405,7 @@ export default function CreateEventScreen() {
   const renderStep2 = () => (
     <>
     <View style={styles.formGroup}>
-        <Text style={styles.label}>Tipo de evento *</Text>
+        <Text style={styles.label}>Tipo de evento <Text style={{ color: 'red' }}>*</Text></Text>
         <View style={styles.pickerContainer}>
             <Picker
                 selectedValue={formData.event_modality}
@@ -415,7 +434,7 @@ export default function CreateEventScreen() {
 
 
     <View style={styles.dateTimeRow}>
-      <Text style={styles.dateTimeLabel}>Inicio</Text>
+      <Text style={styles.dateTimeLabel}>Inicio <Text style={{ color: 'red' }}>*</Text></Text>
       <TouchableOpacity 
         style={styles.dateInput} 
         onPress={() => setShowStartDate(true)}
@@ -439,7 +458,7 @@ export default function CreateEventScreen() {
     </View>
 
     <View style={styles.dateTimeRow}>
-      <Text style={styles.dateTimeLabel}>Fin</Text>
+      <Text style={styles.dateTimeLabel}>Fin <Text style={{ color: 'red' }}>*</Text></Text>
       <TouchableOpacity 
         style={styles.dateInput} 
         onPress={() => setShowEndDate(true)}
@@ -497,7 +516,7 @@ export default function CreateEventScreen() {
     </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Número máximo de participantes</Text>
+        <Text style={styles.label}>Número máximo de participantes <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.max_participants}
@@ -508,7 +527,9 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Precio del evento (NO incluye: recursos, alimentacion, etc)</Text>
+        <Text style={styles.label}>
+          Precio del evento <Text style={{ color: 'red' }}>*</Text> (NO incluye: recursos, alimentación, etc)
+        </Text>
         <TextInput
           style={styles.input}
           value={formData.price_event}
@@ -517,6 +538,7 @@ export default function CreateEventScreen() {
           keyboardType="numeric"
         />
       </View>
+
     </>
   )
 
@@ -524,7 +546,7 @@ export default function CreateEventScreen() {
     <>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Nombre del lugar *</Text>
+        <Text style={styles.label}>Nombre del lugar <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.location_name}
@@ -534,7 +556,7 @@ export default function CreateEventScreen() {
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Dirección *</Text>
+        <Text style={styles.label}>Dirección <Text style={{ color: 'red' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.location_address}
