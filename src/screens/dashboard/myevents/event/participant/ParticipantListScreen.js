@@ -100,6 +100,21 @@ export default function ParticipantListScreen() {
       </View>
   
       <View style={styles.participantActions}>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => {
+          //console.log("item:", item); // Verifica que 'item' tiene el campo 'id_participants'
+          navigation.navigate("ParticipantStatus", {
+            participantId: item.id_participants,  // Usa 'id_participants' en lugar de 'id'
+            eventId: id,
+          });
+        }}
+      >
+        <Icon name="edit-2" size={20} color={colors.indigo[500]} />
+      </TouchableOpacity>
+
+
+
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteParticipant(item.id_participants)}
@@ -244,6 +259,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, 
     borderBottomColor: colors.gray[200], 
   },
+
   participantInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -273,12 +289,13 @@ const styles = StyleSheet.create({
   participantActions: {
     flexDirection: "row",
     alignItems: "center",
+    marginRight: 16,
   },
   
   statusTag: {
-    paddingHorizontal: 12,  // Más reducido
-    paddingVertical: 6,    // Más reducido
-    borderRadius: 3,       // Más reducido
+    paddingHorizontal: 12,  
+    paddingVertical: 6,    
+    borderRadius: 3,       
     marginTop: 12,
     alignSelf: 'flex-start',
 },
@@ -289,8 +306,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[100],
   },
   statusTagText: {
-    fontSize: 15,  // Aumentado de 12 (o 11 si lo habías reducido antes)
-    lineHeight: 18, // Ajustado para evitar corte de texto
+    fontSize: 15,  
+    lineHeight: 18, 
   },
   confirmedTagText: {
     color: "white",
@@ -314,4 +331,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  
 });

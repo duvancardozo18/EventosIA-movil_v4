@@ -138,6 +138,7 @@ export const resourceService = {
 // Servicios de participantes
 export const participantService = {
   getParticipants: () => api.get("/participants/list"),
+  getParticipant: (id) => api.get(`/participants/${id}`),
   getEventParticipants: (eventId) => api.get(`/participants/event/${eventId}`),
   registerParticipant: (data) => api.post("/participants/register", data),
   updateParticipant: (userId, data) => api.put(`/participants/update/${userId}`, data),
