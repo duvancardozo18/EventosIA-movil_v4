@@ -64,6 +64,7 @@ export const userService = {
   createUser: (userData) => api.post("/users", userData),
   updateUser: (id, userData) => api.put(`/users/${id}/rol`, userData),
   deleteUser: (email) => api.delete("/delete-user", { data: { email } }),
+  sendCredentials: (invitationData) => api.post("/credentials", invitationData),
 }
 
 // Servicios de eventos

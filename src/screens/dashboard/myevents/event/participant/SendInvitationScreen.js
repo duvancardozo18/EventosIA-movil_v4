@@ -103,6 +103,12 @@ export default function SendInvitationScreen() {
           id_role: 3,
           password: randomPassword,
         })
+
+         // Enviar las credenciales por correo
+          await userService.sendCredentials({
+            email: formData.email,
+            password: randomPassword,
+          });
         
         const newUser = response.data.usuario
         
