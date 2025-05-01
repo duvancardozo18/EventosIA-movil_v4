@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -13,7 +13,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { notificationService } from "../../../services/api";
 import Icon from "react-native-vector-icons/Feather";
 import { colors } from "../../../styles/colors";
-import BottomTabBar from "../../../components/BottomTabBar";  
+import BottomTabBar from "../../../components/BottomTabBar";
 
 export default function UserNotificationsScreen() {
   const { user } = useAuth();
@@ -28,9 +28,13 @@ export default function UserNotificationsScreen() {
     setLoading(true);
     try {
       const res = await getNotifications(user.id_user);
-      setNotifications(res.data);
+      setNotifications(res.data || []);
     } catch (error) {
-      console.error("Error al obtener notificaciones:", error);
+      if (error.response && error.response.status === 404) {
+        setNotifications([]); // No hay notificaciones, establece array vacío
+      } else {
+        console.error("Error al obtener notificaciones:", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,8 +66,8 @@ export default function UserNotificationsScreen() {
   };
 
   const renderItem = ({ item }) => {
-    const formattedDate = new Date(item.created_at).toLocaleString(); // puedes personalizar formato si quieres
-  
+    const formattedDate = new Date(item.created_at).toLocaleString();
+
     return (
       <View style={[styles.item, item.read_status && styles.readItem]}>
         <Text style={styles.message}>{item.message}</Text>
@@ -81,32 +85,12 @@ export default function UserNotificationsScreen() {
       </View>
     );
   };
-  
-  
 
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
     }, [user?.id_user])
   );
-  
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.indigo[500]} />
-        <Text>Cargando notificaciones...</Text>
-      </View>
-    );
-  }
-
-  if (!notifications.length) {
-    return (
-      <View style={styles.center}>
-        <Text>No tienes notificaciones.</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -115,16 +99,27 @@ export default function UserNotificationsScreen() {
         <Text style={styles.headerTitle}>Notificaciones</Text>
       </View>
 
-
-     
-
-      {/* Lista de Notificaciones */}
-      <FlatList
-        data={filteredNotifications()}
-        keyExtractor={(item) => item.id_notification.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-      />
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.indigo[500]} />
+          <Text>Cargando notificaciones...</Text>
+        </View>
+      ) : (
+        <>
+          {notifications.length === 0 ? (
+            <View style={styles.center}>
+              <Text>No tienes notificaciones.</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredNotifications()}
+              keyExtractor={(item) => item.id_notification.toString()}
+              renderItem={renderItem}
+              contentContainerStyle={styles.list}
+            />
+          )}
+        </>
+      )}
 
       {/* Menú inferior */}
       <BottomTabBar activeTab="notifications" />
@@ -152,7 +147,6 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     marginTop: 25,
   },
-
   list: {
     padding: 16,
   },
@@ -167,11 +161,9 @@ const styles = StyleSheet.create({
     color: colors.gray[600],
     marginBottom: 4,
   },
-  
   readItem: {
     backgroundColor: colors.gray[200], // Leída
   },
-  
   message: {
     fontSize: 16,
     marginBottom: 8,

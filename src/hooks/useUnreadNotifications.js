@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { notificationService } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import axios from "axios";
 
 export const useUnreadNotifications = () => {
   const { user } = useAuth();
@@ -14,7 +15,12 @@ export const useUnreadNotifications = () => {
         const unread = res.data.filter(n => !n.read_status).length;
         setUnreadCount(unread);
       } catch (err) {
-        console.error("Error al obtener notificaciones no leídas", err);
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          // No hay notificaciones, así que no se hace nada
+          setUnreadCount(0);
+        } else {
+          console.error("Error al obtener notificaciones no leídas", err);
+        }
       }
     };
 

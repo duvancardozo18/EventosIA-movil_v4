@@ -25,11 +25,9 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
-          <Icon name="arrow-left" size={24} marginTop={34} color={colors.gray[800]} />
-        </TouchableOpacity>
-      </View>
+       <View style={styles.header}>
+             <Text style={styles.headerTitle}>Mi Perfil</Text>
+        </View>
 
       <View style={styles.content}>
         <View style={styles.profileHeader}>
@@ -71,9 +69,17 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[200],
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 16,
+    marginTop: 25,
   },
   content: {
     flex: 1,
@@ -99,7 +105,7 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     marginTop: 16,
-    marginBottom: 200,
+    marginBottom: 40,
   },
   sectionTitle: {
     color: colors.indigo[500],
