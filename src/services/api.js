@@ -172,6 +172,17 @@ export const categoryService = {
   deleteCategory: (id) => api.delete(`/categories/${id}`),
 }
 
+
+// Servicios de Notificaciones
+export const notificationService = {
+  getNotifications: (userId) => api.get(`/notifications/${userId}`),
+  markAsRead: (notificationId, data) => api.put(`/notifications/${notificationId}`, data),
+  deleteNotification: (notificationId) => api.delete(`/notifications/${notificationId}`),
+  createNotification: (notificationData) => api.post(`/notifications`, notificationData),
+};
+
+
+
 export const invitationService = {
   sendInvitation: (invitationData) => api.post("invitacion", invitationData),
 }

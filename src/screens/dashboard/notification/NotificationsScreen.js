@@ -1,106 +1,137 @@
-"use client"
+import React, { useEffect, useState,useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  TextInput,
+} from "react-native";
+import { useAuth } from "../../../contexts/AuthContext";
+import { notificationService } from "../../../services/api";
+import Icon from "react-native-vector-icons/Feather";
+import { colors } from "../../../styles/colors";
+import BottomTabBar from "../../../components/BottomTabBar";  
 
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from "react-native"
-import { useNavigation } from "@react-navigation/native"
-import Icon from "react-native-vector-icons/Feather"
-import BottomTabBar from "../../../components/BottomTabBar"
-import { colors } from "../../../styles/colors"
+export default function UserNotificationsScreen() {
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-export default function NotificationsScreen() {
-  const navigation = useNavigation()
-  const [notificaciones, setNotificaciones] = useState([
-    {
-      id: 1,
-      fecha: "Wed, Apr 28",
-      hora: "5:30 PM",
-      titulo: "Jo Malone London's Mother's Day Presents",
-      lugar: "Radius Gallery",
-      ubicacion: "Santa Cruz, CA",
-      imagen: "https://via.placeholder.com/80",
-    },
-    {
-      id: 2,
-      fecha: "Wed, Apr 28",
-      hora: "5:30 PM",
-      titulo: "Jo Malone London's Mother's Day Presents",
-      lugar: "Radius Gallery",
-      ubicacion: "Santa Cruz, CA",
-      imagen: "https://via.placeholder.com/80",
-    },
-    {
-      id: 3,
-      fecha: "Wed, Apr 28",
-      hora: "5:30 PM",
-      titulo: "Jo Malone London's Mother's Day Presents",
-      lugar: "Radius Gallery",
-      ubicacion: "Santa Cruz, CA",
-      imagen: "https://via.placeholder.com/80",
-    },
-  ])
+  const { getNotifications, markAsRead, deleteNotification } = notificationService;
 
-  const eliminarNotificacion = (id) => {
-    setNotificaciones(notificaciones.filter((notif) => notif.id !== id))
-  }
+  const fetchNotifications = async () => {
+    if (!user?.id_user) return;
+    setLoading(true);
+    try {
+      const res = await getNotifications(user.id_user);
+      setNotifications(res.data);
+    } catch (error) {
+      console.error("Error al obtener notificaciones:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const renderNotificationItem = ({ item }) => (
-    <View style={styles.notificationItem}>
-      <View style={styles.notificationImageContainer}>
-        <Image source={{ uri: item.imagen }} style={styles.notificationImage} />
-      </View>
-      <View style={styles.notificationContent}>
-        <View style={styles.notificationHeader}>
-          <Text style={styles.notificationDate}>
-            {item.fecha} • {item.hora}
-          </Text>
-          <TouchableOpacity onPress={() => eliminarNotificacion(item.id)} style={styles.deleteButton}>
-            <Icon name="trash-2" size={20} color={colors.indigo[500]} />
+  const handleMarkAsRead = async (id) => {
+    try {
+      await markAsRead(id, { read: true });
+      fetchNotifications();
+    } catch (err) {
+      console.error("Error al marcar como leída:", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteNotification(id);
+      fetchNotifications();
+    } catch (err) {
+      console.error("Error al eliminar notificación:", err);
+    }
+  };
+
+  const filteredNotifications = () => {
+    if (!searchTerm) return notifications;
+    return notifications.filter((notification) =>
+      notification.message.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={[styles.item, item.read_status && styles.readItem]}>
+      <Text style={styles.message}>{item.message}</Text>
+      <View style={styles.actions}>
+        {!item.read_status && (
+          <TouchableOpacity onPress={() => handleMarkAsRead(item.id_notification)}>
+            <Icon name="check-circle" size={20} color={colors.green[500]} />
           </TouchableOpacity>
-        </View>
-        <Text style={styles.notificationTitle}>{item.titulo}</Text>
-        <View style={styles.locationContainer}>
-          <Icon name="map-pin" size={16} color={colors.gray[500]} style={styles.locationIcon} />
-          <Text style={styles.locationText}>
-            {item.lugar} • {item.ubicacion}
-          </Text>
-        </View>
+        )}
+        <TouchableOpacity onPress={() => handleDelete(item.id_notification)}>
+          <Icon name="trash-2" size={20} color={colors.red[500]} />
+        </TouchableOpacity>
       </View>
     </View>
-  )
+  );
+  
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+    }, [user?.id_user])
+  );
+  
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={colors.indigo[500]} />
+        <Text>Cargando notificaciones...</Text>
+      </View>
+    );
+  }
+
+  if (!notifications.length) {
+    return (
+      <View style={styles.center}>
+        <Text>No tienes notificaciones.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
+      {/* Encabezado con la flecha */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
-          <Icon name="arrow-left" size={24} color={colors.gray[800]} />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Notificaciones</Text>
       </View>
 
-      <View style={styles.content}>
-        {notificaciones.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tienes notificaciones</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={notificaciones}
-            renderItem={renderNotificationItem}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.notificationsList}
-          />
-        )}
-      </View>
 
+     
+
+      {/* Lista de Notificaciones */}
+      <FlatList
+        data={filteredNotifications()}
+        keyExtractor={(item) => item.id_notification.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={styles.list}
+      />
+
+      {/* Menú inferior */}
       <BottomTabBar activeTab="notifications" />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+    width: "100%",
+    height: "100%",
   },
   header: {
     flexDirection: "row",
@@ -113,73 +144,35 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginLeft: 16,
+    marginTop: 25,
   },
-  content: {
-    flex: 1,
+
+  list: {
     padding: 16,
   },
-  notificationsList: {
-    paddingBottom: 16,
-  },
-  notificationItem: {
-    flexDirection: "row",
-    backgroundColor: "white",
+  item: {
+    backgroundColor: colors.gray[100], // No leída
+    padding: 12,
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.25)',
+    marginBottom: 10,
   },
-  notificationImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: colors.pink[100],
-    overflow: "hidden",
-    marginRight: 12,
+  readItem: {
+    backgroundColor: colors.gray[300], // Leída
   },
-  notificationImage: {
-    width: "100%",
-    height: "100%",
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 4,
-  },
-  notificationDate: {
-    color: colors.indigo[500],
-    fontSize: 12,
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  notificationTitle: {
-    fontWeight: "bold",
+  
+  message: {
     fontSize: 16,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  locationContainer: {
+  actions: {
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 16,
   },
-  locationIcon: {
-    marginRight: 4,
-  },
-  locationText: {
-    color: colors.gray[500],
-    fontSize: 12,
-  },
-  emptyContainer: {
+  center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 16,
   },
-  emptyText: {
-    color: colors.gray[500],
-  },
-})
-
+});
