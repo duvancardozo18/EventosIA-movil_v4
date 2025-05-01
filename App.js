@@ -58,7 +58,7 @@ import PayBillingScreen from "./src/screens/dashboard/myevents/event/billing/Pay
 import BillPaidScreen from "./src/screens/dashboard/myevents/event/billing/BillPaidScreen";
 import AddFoodScreen from "./src/screens/dashboard/myevents/event/food/AddFoodScreen";
 import EventEditedScreen from "./src/screens/dashboard/myevents/event/EventEditedScreen";
-
+import { BillingProvider } from "./src/contexts/BillingContext";
 
 // Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -74,62 +74,190 @@ export default function App() {
                 <LocationProvider>
                   <EventTypeProvider>
                     <CategoryProvider>
-                      <NavigationContainer>
-                        <UserProvider>
-                          <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
-                            <Stack.Screen name="Home" component={HomeScreen} />
-                            <Stack.Screen name="Login" component={LoginScreen} />
-                            <Stack.Screen name="Register" component={RegisterScreen} />
-                            <Stack.Screen name="AccountCreated" component={AccountCreatedScreen} />
-                            <Stack.Screen name="AccountNotVerified" component={AccountNotVerifiedScreen} />
-                            <Stack.Screen name="RecoverPassword" component={RecoverPasswordScreen} />
-                            <Stack.Screen name="RestoreAccount" component={RestoreAccountScreen} />
-                            <Stack.Screen name="AccountRestored" component={AccountRestoredScreen} />
-                            <Stack.Screen name="Dashboard" component={DashboardScreen} />
-                            <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
-                            <Stack.Screen name="EventCreated" component={EventCreatedScreen} />
-                            <Stack.Screen name="MyEvents" component={MyEventsScreen} />
-                            <Stack.Screen name="EventDetail" component={DetailEventScreen} />
-                            <Stack.Screen name="EventDeleted" component={EventDeletedScreen} />
-                            <Stack.Screen name="ParticipantList" component={ParticipantListScreen} />
-                            <Stack.Screen name="ParticipantStatus" component={ParticipantStatusScreen} />
-                            <Stack.Screen name="SendInvitation" component={SendInvitationScreen} />
-                            <Stack.Screen name="InvitationSent" component={InvitationSentScreen} />
-                            <Stack.Screen name="InvitationDeleted" component={InvitationDeletedScreen} />
-                            <Stack.Screen name="EventStatus" component={EventStatusScreen} />
-                            <Stack.Screen name="EditEvent" component={EditEventScreen} />
-                            <Stack.Screen name="LinkClient" component={LinkClientScreen} />
-                            <Stack.Screen name="QuoteSent" component={QuoteSentScreen} />
-                            <Stack.Screen name="ClientDeleted" component={ClientDeletedScreen} />
-                            <Stack.Screen name="ResourceList" component={ResourceListScreen} />
-                            <Stack.Screen name="AddResource" component={AddResourceScreen} />
-                            <Stack.Screen name="ResourceCreated" component={ResourceCreatedScreen} />
-                            <Stack.Screen name="EditResource" component={EditResourceScreen} />
-                            <Stack.Screen name="ResourceDeleted" component={ResourceDeletedScreen} />
-                            <Stack.Screen name="FoodList" component={FoodListScreen} />
-                            <Stack.Screen name="AddFood" component={AddFoodScreen} />
-                            <Stack.Screen name="EditFood" component={EditFoodScreen} />
-                            <Stack.Screen name="FoodCreated" component={FoodCreatedScreen} />
-                            <Stack.Screen name="EventEdited" component={EventEditedScreen} />
-                            <Stack.Screen name="FoodDeleted" component={FoodDeletedScreen} />
-                            <Stack.Screen name="Notifications" component={NotificationsScreen} />
-                            <Stack.Screen name="Profile" component={ProfileScreen} />
-                            <Stack.Screen name="Billing" component={BillingScreen} />
-                            <Stack.Screen name="BillSent" component={InvitationScreen} />
-                            <Stack.Screen name="BillingPayment" component={PayBillingScreen} />
-                            <Stack.Screen name="BillPaid" component={BillPaidScreen} />
-                          </Stack.Navigator>
-                        </UserProvider>
-                      </NavigationContainer>
+                      <BillingProvider>
+                        <NavigationContainer>
+                          <UserProvider>
+                            <Stack.Navigator
+                              initialRouteName="Home"
+                              screenOptions={{ headerShown: false }}
+                            >
+                              <Stack.Screen
+                                name="Home"
+                                component={HomeScreen}
+                              />
+                              <Stack.Screen
+                                name="Login"
+                                component={LoginScreen}
+                              />
+                              <Stack.Screen
+                                name="Register"
+                                component={RegisterScreen}
+                              />
+                              <Stack.Screen
+                                name="AccountCreated"
+                                component={AccountCreatedScreen}
+                              />
+                              <Stack.Screen
+                                name="AccountNotVerified"
+                                component={AccountNotVerifiedScreen}
+                              />
+                              <Stack.Screen
+                                name="RecoverPassword"
+                                component={RecoverPasswordScreen}
+                              />
+                              <Stack.Screen
+                                name="RestoreAccount"
+                                component={RestoreAccountScreen}
+                              />
+                              <Stack.Screen
+                                name="AccountRestored"
+                                component={AccountRestoredScreen}
+                              />
+                              <Stack.Screen
+                                name="Dashboard"
+                                component={DashboardScreen}
+                              />
+                              <Stack.Screen
+                                name="CreateEvent"
+                                component={CreateEventScreen}
+                              />
+                              <Stack.Screen
+                                name="EventCreated"
+                                component={EventCreatedScreen}
+                              />
+                              <Stack.Screen
+                                name="MyEvents"
+                                component={MyEventsScreen}
+                              />
+                              <Stack.Screen
+                                name="EventDetail"
+                                component={DetailEventScreen}
+                              />
+                              <Stack.Screen
+                                name="EventDeleted"
+                                component={EventDeletedScreen}
+                              />
+                              <Stack.Screen
+                                name="ParticipantList"
+                                component={ParticipantListScreen}
+                              />
+                              <Stack.Screen
+                                name="ParticipantStatus"
+                                component={ParticipantStatusScreen}
+                              />
+                              <Stack.Screen
+                                name="SendInvitation"
+                                component={SendInvitationScreen}
+                              />
+                              <Stack.Screen
+                                name="InvitationSent"
+                                component={InvitationSentScreen}
+                              />
+                              <Stack.Screen
+                                name="InvitationDeleted"
+                                component={InvitationDeletedScreen}
+                              />
+                              <Stack.Screen
+                                name="EventStatus"
+                                component={EventStatusScreen}
+                              />
+                              <Stack.Screen
+                                name="EditEvent"
+                                component={EditEventScreen}
+                              />
+                              <Stack.Screen
+                                name="LinkClient"
+                                component={LinkClientScreen}
+                              />
+                              <Stack.Screen
+                                name="QuoteSent"
+                                component={QuoteSentScreen}
+                              />
+                              <Stack.Screen
+                                name="ClientDeleted"
+                                component={ClientDeletedScreen}
+                              />
+                              <Stack.Screen
+                                name="ResourceList"
+                                component={ResourceListScreen}
+                              />
+                              <Stack.Screen
+                                name="AddResource"
+                                component={AddResourceScreen}
+                              />
+                              <Stack.Screen
+                                name="ResourceCreated"
+                                component={ResourceCreatedScreen}
+                              />
+                              <Stack.Screen
+                                name="EditResource"
+                                component={EditResourceScreen}
+                              />
+                              <Stack.Screen
+                                name="ResourceDeleted"
+                                component={ResourceDeletedScreen}
+                              />
+                              <Stack.Screen
+                                name="FoodList"
+                                component={FoodListScreen}
+                              />
+                              <Stack.Screen
+                                name="AddFood"
+                                component={AddFoodScreen}
+                              />
+                              <Stack.Screen
+                                name="EditFood"
+                                component={EditFoodScreen}
+                              />
+                              <Stack.Screen
+                                name="FoodCreated"
+                                component={FoodCreatedScreen}
+                              />
+                              <Stack.Screen
+                                name="EventEdited"
+                                component={EventEditedScreen}
+                              />
+                              <Stack.Screen
+                                name="FoodDeleted"
+                                component={FoodDeletedScreen}
+                              />
+                              <Stack.Screen
+                                name="Notifications"
+                                component={NotificationsScreen}
+                              />
+                              <Stack.Screen
+                                name="Profile"
+                                component={ProfileScreen}
+                              />
+                              <Stack.Screen
+                                name="Billing"
+                                component={BillingScreen}
+                              />
+                              <Stack.Screen
+                                name="BillSent"
+                                component={InvitationScreen}
+                              />
+                              <Stack.Screen
+                                name="BillingPayment"
+                                component={PayBillingScreen}
+                              />
+                              <Stack.Screen
+                                name="BillPaid"
+                                component={BillPaidScreen}
+                              />
+                            </Stack.Navigator>
+                          </UserProvider>
+                        </NavigationContainer>
+                      </BillingProvider>
                     </CategoryProvider>
-                  <StatusBar style="auto" />
-                </EventTypeProvider>
-              </LocationProvider>
-            </FoodProvider>
-          </ResourceProvider>
-        </ParticipantProvider>
-      </EventProvider>
-    </AuthProvider>
-  </SafeAreaProvider>
+                    <StatusBar style="auto" />
+                  </EventTypeProvider>
+                </LocationProvider>
+              </FoodProvider>
+            </ResourceProvider>
+          </ParticipantProvider>
+        </EventProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
