@@ -176,5 +176,20 @@ export const invitationService = {
   sendInvitation: (invitationData) => api.post("invitacion", invitationData),
 }
 
+// Servicios de facturación
+export const billingService = {
+  // Obtener la cotización o factura de un evento (GET /billing/:eventId)
+  getBilling: (eventId) => api.get(`/billing/${eventId}`),
+
+  // Crear una nueva factura (POST /billing)
+  createBilling: (eventId, paymentMethod) => api.post('/billing', { event_id: eventId, payment_method: paymentMethod }),
+
+  // Aceptar la cotización (GET /billing/accept/:billingId)
+  acceptBilling: (billingId) => api.get(`/billing/accept/${billingId}`),
+
+  // Rechazar la cotización (GET /billing/reject/:billingId)
+  rejectBilling: (billingId) => api.get(`/billing/reject/${billingId}`)
+};
+
 export default api
 

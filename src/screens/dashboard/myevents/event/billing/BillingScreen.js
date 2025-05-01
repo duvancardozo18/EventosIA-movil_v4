@@ -9,11 +9,13 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "../../../../../styles/colors";
 import { useEvent } from "../../../../../contexts/EventContext";
+import axios from "axios";
 
 const BillingScreen = () => {
   const navigation = useNavigation();
@@ -27,19 +29,105 @@ const BillingScreen = () => {
 
   const [event, setEvent] = useState(null);
   const [billing, setBilling] = useState(null);
+  const [billingCosts, setBillingCosts] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [costsLoading, setCostsLoading] = useState(true);
+
+  // Función para formatear números a formato de moneda
+  const formatCurrency = (value) => {
+    return value.toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+  };
+
+  // Función para obtener los datos de facturación de la API
+  const fetchBillingCosts = async (id) => {
+    try {
+      setCostsLoading(true);
+      // Configuración para manejar timeouts y otros problemas de red
+      const config = {
+        timeout: 10000, // 10 segundos de timeout
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        }
+      };
+      
+      // Usar direcciones IP en lugar de localhost para evitar problemas en dispositivos reales
+      // También verificamos si estamos en un emulador Android o un dispositivo real
+      const baseUrl = Platform.OS === 'android' 
+                      ? 'http://10.0.2.2:7777' // Dirección especial para emulador Android
+                      : 'http://localhost:7777'; // Para iOS
+                      
+      console.log(`Intentando conectar a: ${baseUrl}/api/billing/${id}`);
+      
+      const response = await axios.get(`${baseUrl}/api/billing/${id}`, config);
+      console.log("Respuesta recibida:", response);
+      setBillingCosts(response.data);
+      console.log("Datos de facturación cargados:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener datos de facturación:", error);
+      
+      // Mostrar información más detallada sobre el error
+      const errorMessage = error.response 
+        ? `Error ${error.response.status}: ${error.response.data?.message || 'Error del servidor'}` 
+        : error.request 
+          ? 'No se recibió respuesta del servidor. Verifica tu conexión.' 
+          : `Error de configuración: ${error.message}`;
+          
+      console.log("Detalles del error:", errorMessage);
+      Alert.alert(
+        "Error de conexión", 
+        errorMessage
+      );
+      
+      // Como alternativa, podemos usar datos mockup para pruebas:
+      const mockData = {
+        cliente: {
+          nombre: "Cliente de Prueba",
+          correo: "test@example.com"
+        },
+        estado: "Pendiente",
+        costos: {
+          logistica: 10000,
+          alquiler_sitio: 12000,
+          alimentacion: 300000,
+          recursos: 156140365,
+          total: 156462365
+        }
+      };
+      
+      // Usar datos de prueba en caso de error de red
+      setBillingCosts(mockData);
+      console.log("Usando datos mockup:", mockData);
+      return mockData;
+    } finally {
+      setCostsLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Fetch event details when component mounts
     if (eventId) {
       const loadEventData = async () => {
-        const eventData = await fetchEvent(eventId);
-        if (eventData) {
-          setEvent(eventData);
-          setLoading(false);
-        } else {
+        try {
+          const eventData = await fetchEvent(eventId);
+          if (eventData) {
+            setEvent(eventData);
+            // Una vez que tenemos el evento, cargamos los datos de facturación
+            await fetchBillingCosts(eventId);
+          } else {
+            Alert.alert("Error", "No se pudo cargar la información del evento");
+            navigation.goBack();
+          }
+        } catch (error) {
+          console.error("Error al cargar datos del evento:", error);
           Alert.alert("Error", "No se pudo cargar la información del evento");
           navigation.goBack();
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -54,7 +142,8 @@ const BillingScreen = () => {
     navigation.navigate("LinkClient", eventId);
   };
   const handlePayBill = () => {
-    navigation.navigate("BillingPayment");
+    // Navegar a la vista BillingPayment y pasar el eventId como parámetro
+    navigation.navigate("BillingPayment", { eventId: eventId });
   };
 
   const handleRemoveClient = async () => {
@@ -159,36 +248,61 @@ const BillingScreen = () => {
             })}
           </Text>
         </View>
-        <Text style={styles.sectionTitle}>Costos</Text>
+        
+        {billingCosts ? (
+          <>
+            <Text style={styles.sectionTitle}>Costos</Text>
+            {costsLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Logística</Text>
+                  <Text style={styles.costValue}>
+                    ${formatCurrency(billingCosts.costos.logistica)}
+                  </Text>
+                </View>
 
-        <View style={styles.costRow}>
-          <Text style={styles.costLabel}>Logística</Text>
-          <Text style={styles.costValue}>$1.500.000</Text>
-        </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Alquiler del Sitio</Text>
+                  <Text style={styles.costValue}>
+                    ${formatCurrency(billingCosts.costos.alquiler_sitio)}
+                  </Text>
+                </View>
 
-        <View style={styles.costRow}>
-          <Text style={styles.costLabel}>Alquiler del Sitio</Text>
-          <Text style={styles.costValue}>$2.000.000</Text>
-        </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Alimentación</Text>
+                  <Text style={styles.costValue}>
+                    ${formatCurrency(billingCosts.costos.alimentacion)}
+                  </Text>
+                </View>
 
-        <View style={styles.costRow}>
-          <Text style={styles.costLabel}>Alimentación</Text>
-          <Text style={styles.costValue}>$2.500.000</Text>
-        </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Recursos</Text>
+                  <Text style={styles.costValue}>
+                    ${formatCurrency(billingCosts.costos.recursos)}
+                  </Text>
+                </View>
 
-        <View style={styles.costRow}>
-          <Text style={styles.costLabel}>Recursos</Text>
-          <Text style={styles.costValue}>$5.000.000</Text>
-        </View>
+                <View style={styles.separator} />
 
-        <View style={styles.separator} />
-
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>TOTAL</Text>
-          <Text style={styles.totalValue}>$11.000.000</Text>
-        </View>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>TOTAL</Text>
+                  <Text style={styles.totalValue}>
+                    ${formatCurrency(billingCosts.costos.total)}
+                  </Text>
+                </View>
+              </>
+            )}
+          </>
+        ) : (
+          <View style={styles.noCostsContainer}>
+            <Text style={styles.noCostsText}>
+              No se pudieron cargar los datos de costos
+            </Text>
+          </View>
+        )}
       </View>
-
 
       {!billing?.client ? (
         <View style={styles.noClientContainer}>
@@ -664,8 +778,6 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     marginVertical: 20,
   },
-  
-  
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -680,6 +792,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: colors.indigo[500], // Azul brillante
+  },
+  noCostsContainer: {
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noCostsText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  statusLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginRight: 8,
   },
 });
 

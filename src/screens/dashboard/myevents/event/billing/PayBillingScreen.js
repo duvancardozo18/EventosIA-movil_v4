@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Alert, Platform } from 'react-native';
 import { colors } from '../../../../../styles/colors.js'; // Importando colores
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute } from '@react-navigation/native';
+import axios from 'axios'; // Asegúrate de tener axios instalado
 
 export default function PayBillingScreen() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('paypal'); // PayPal seleccionado por defecto
@@ -14,20 +15,62 @@ export default function PayBillingScreen() {
   const [nequiNumber, setNequiNumber] = useState('');
 
   // Datos de ejemplo para la dirección y la factura
-  const billingData = {
-    address: 'Adam Johnson\n403 Oakland Ave Street, A city, Florida, 32104\nUnited States of America',
-    shippingFee: 5.43,
-    discount: 1.89,
-    priceTotal: 84.82,
-    total: 88.36,
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { eventId } = route.params; // Obtener el eventId de los parámetros de la ruta
+
+  const [billingData, setBillingData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchBillingData = async (id) => {
+    try {
+      setLoading(true);
+      // Configuración de la URL base dependiendo de la plataforma
+      const baseUrl = Platform.OS === 'android'
+        ? 'http://10.0.2.2:7777'
+        : 'http://localhost:7777';
+
+      const response = await axios.get(`${baseUrl}/api/billing/${id}`);
+      setBillingData(response.data);
+    } catch (error) {
+      console.error("Error al obtener datos de facturación:", error);
+      Alert.alert("Error", "No se pudieron cargar los datos de facturación");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Llamar a la función para obtener los datos de facturación cuando el componente se monta
+  useEffect(() => {
+    if (eventId) {
+      fetchBillingData(eventId);
+    } else {
+      Alert.alert("Error", "No se recibió el ID del evento");
+      navigation.goBack();
+    }
+  }, [eventId]);
+
+  // Verificar si los datos de facturación están cargados
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Si no hay datos de facturación
+  if (!billingData) {
+    return (
+      <View style={styles.container}>
+        <Text>No se encontraron datos de facturación.</Text>
+      </View>
+    );
+  }
 
   const handlePaymentMethodChange = (method) => {
     setSelectedPaymentMethod(method);
   };
-  
-  const navigation = useNavigation();
-  const route = useRoute();
 
   const handlePayBilling = () => {
     let isValid = true;
@@ -172,7 +215,13 @@ export default function PayBillingScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionHeader}>Datos personales</Text>
         <View style={styles.addressContainer}>
-          <Text style={styles.addressText}>{billingData.address}</Text>
+          {/* Mostrar nombre y correo del cliente */}
+          <Text style={styles.addressText}>
+            Nombre: {billingData.cliente?.nombre || "No disponible"}
+          </Text>
+          <Text style={styles.addressText}>
+            Correo: {billingData.cliente?.correo || "No disponible"}
+          </Text>
         </View>
       </View>
 
@@ -288,15 +337,16 @@ export default function PayBillingScreen() {
         <Text style={styles.sectionHeader}>Costo del evento</Text>
         <View style={styles.billDetail}>
           <Text style={styles.billLabel}>Valor Total</Text>
-          <Text style={styles.billValue}>${billingData.priceTotal.toFixed(2)}</Text>
-        </View>
-        <View style={styles.billDetail}>
-          <Text style={styles.billLabel}>Descuento</Text>
-          <Text style={styles.billValue}>-${billingData.discount.toFixed(2)}</Text>
+          {/* Mostrar el total de la factura desde la respuesta */}
+          <Text style={styles.billValue}>
+            ${billingData.costos?.total ? billingData.costos.total.toLocaleString('es-CO') : "No disponible"}
+          </Text>
         </View>
         <View style={[styles.billDetail, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>${billingData.total.toFixed(2)}</Text>
+          <Text style={styles.totalValue}>
+            ${billingData.costos?.total ? billingData.costos.total.toLocaleString('es-CO') : "No disponible"}
+          </Text>
         </View>
       </View>
 
