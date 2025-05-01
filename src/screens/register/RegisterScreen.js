@@ -1,7 +1,16 @@
-"use client"
-
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from "react-native"
+import { useState, useEffect } from "react"
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  ScrollView,
+  ActivityIndicator,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Animated
+} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Feather } from '@expo/vector-icons'
 import { userService } from "../../services/api"
@@ -17,28 +26,154 @@ export default function RegisterScreen() {
     confirmPassword: "",
     id_role: 3, // Por defecto, rol de usuario normal
   })
+  
+  // Estados para controlar la visibilidad de las contraseñas
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  
+  // Estados para la UI
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  
+  // Estados para errores por campo
+  const [errors, setErrors] = useState({
+    name: "",
+    last_name: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  })
+  
+  // Animación para el error general
+  const [errorFadeAnim] = useState(new Animated.Value(0))
+  
+  // Efecto para animar el mensaje de error
+  useEffect(() => {
+    if (error) {
+      Animated.sequence([
+        Animated.timing(errorFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true
+        }),
+        Animated.delay(5000),
+        Animated.timing(errorFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true
+        })
+      ]).start(() => setError(null))
+    }
+  }, [error, errorFadeAnim])
 
+  // Función para actualizar los datos del formulario
   const handleChange = (name, value) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
+    
+    // Si ya se intentó enviar el formulario, validar en tiempo real
+    if (formSubmitted) {
+      validateField(name, value)
+    }
+  }
+  
+  // Validar un campo específico
+  const validateField = (fieldName, value) => {
+    let errorMessage = ""
+    
+    switch (fieldName) {
+      case "name":
+        if (!value.trim()) {
+          errorMessage = "El nombre es obligatorio"
+        } else if (value.trim().length < 2) {
+          errorMessage = "El nombre debe tener al menos 2 caracteres"
+        }
+        break
+        
+      case "last_name":
+        if (!value.trim()) {
+          errorMessage = "El apellido es obligatorio"
+        } else if (value.trim().length < 2) {
+          errorMessage = "El apellido debe tener al menos 2 caracteres"
+        }
+        break
+        
+      case "email":
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!value.trim()) {
+          errorMessage = "El correo electrónico es obligatorio"
+        } else if (!emailRegex.test(value)) {
+          errorMessage = "Por favor, ingresa un correo electrónico válido"
+        }
+        break
+        
+      case "password":
+        if (!value.trim()) {
+          errorMessage = "La contraseña es obligatoria"
+        } else if (value.length < 6) {
+          errorMessage = "La contraseña debe tener al menos 6 caracteres"
+        }
+        break
+        
+      case "confirmPassword":
+        if (!value.trim()) {
+          errorMessage = "Confirmar la contraseña es obligatorio"
+        } else if (value !== formData.password) {
+          errorMessage = "Las contraseñas no coinciden"
+        }
+        break
+        
+      default:
+        break
+    }
+    
+    // Actualizar el estado de errores
+    setErrors(prev => ({
+      ...prev,
+      [fieldName]: errorMessage
+    }))
+    
+    return errorMessage === ""
+  }
+  
+  // Validar todo el formulario
+  const validateForm = () => {
+    // Validar cada campo
+    const nameValid = validateField("name", formData.name)
+    const lastNameValid = validateField("last_name", formData.last_name)
+    const emailValid = validateField("email", formData.email)
+    const passwordValid = validateField("password", formData.password)
+    const confirmPasswordValid = validateField("confirmPassword", formData.confirmPassword)
+    
+    // Devolver true si todos los campos son válidos
+    return nameValid && lastNameValid && emailValid && passwordValid && confirmPasswordValid
   }
 
+  // Manejar el envío del formulario
   const handleSubmit = async () => {
-    // Validar que las contraseñas coincidan
-    if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden")
+    // Cerrar el teclado
+    Keyboard.dismiss()
+    
+    // Marcar el formulario como enviado para activar validaciones en tiempo real
+    setFormSubmitted(true)
+    
+    // Validar todos los campos
+    if (!validateForm()) {
+      // Si hay errores, no continuar
       return
     }
 
     try {
       setLoading(true)
       setError(null)
+      // Limpiar error específico de email
+      setErrors(prev => ({
+        ...prev,
+        email: ""
+      }))
 
       // Eliminar confirmPassword antes de enviar
       const { confirmPassword, ...userData } = formData
@@ -46,114 +181,180 @@ export default function RegisterScreen() {
       await userService.createUser(userData)
       navigation.navigate("AccountCreated")
     } catch (err) {
-      setError(err.response?.data?.message || "Error al crear la cuenta")
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || "Error al crear la cuenta"
+      setError(errorMessage)
+      
+      // Si el error es de email duplicado, mostrarlo en el campo específico
+      if (errorMessage.toLowerCase().includes('email ya está registrado')) {
+        setErrors(prev => ({
+          ...prev,
+          email: "Este correo electrónico ya está registrado"
+        }))
+      }
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={colors.gray[800]} />
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.title}>Registro</Text>
-
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Feather name="user" size={20} color={colors.gray[400]} />
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Nombre"
-            value={formData.name}
-            onChangeText={(value) => handleChange("name", value)}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Feather  name="user" size={20} color={colors.gray[400]} />
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Apellido"
-            value={formData.last_name}
-            onChangeText={(value) => handleChange("last_name", value)}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Feather con name="mail" size={20} color={colors.gray[400]} />
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Correo electrónico"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={formData.email}
-            onChangeText={(value) => handleChange("email", value)}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Feather  name="lock" size={20} color={colors.gray[400]} />
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            secureTextEntry={!showPassword}
-            value={formData.password}
-            onChangeText={(value) => handleChange("password", value)}
-          />
-          <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-            <Feather  name={showPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Feather name="arrow-left" size={24} color={colors.gray[800]} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.inputContainer}>
-          <View style={styles.inputIconContainer}>
-            <Feather  name="lock" size={20} color={colors.gray[400]} />
+        <Text style={styles.title}>Registro</Text>
+
+        {error ? (
+          <Animated.View style={[styles.errorContainer, { opacity: errorFadeAnim }]}>
+            <Feather name="alert-circle" size={18} color={colors.red[700]} style={styles.errorIcon} />
+            <Text style={styles.errorText}>{error}</Text>
+          </Animated.View>
+        ) : null}
+
+        <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Feather name="user" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={[styles.input, errors.name ? styles.inputError : null]}
+              placeholder="Nombre"
+              value={formData.name}
+              onChangeText={(value) => handleChange("name", value)}
+              onBlur={() => formSubmitted && validateField("name", formData.name)}
+            />
+            {errors.name ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{errors.name}</Text>
+              </View>
+            ) : null}
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Confirmar Contraseña"
-            secureTextEntry={!showConfirmPassword}
-            value={formData.confirmPassword}
-            onChangeText={(value) => handleChange("confirmPassword", value)}
-          />
-          <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-            <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
+
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Feather name="user" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={[styles.input, errors.last_name ? styles.inputError : null]}
+              placeholder="Apellido"
+              value={formData.last_name}
+              onChangeText={(value) => handleChange("last_name", value)}
+              onBlur={() => formSubmitted && validateField("last_name", formData.last_name)}
+            />
+            {errors.last_name ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{errors.last_name}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Feather name="mail" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={[styles.input, errors.email ? styles.inputError : null]}
+              placeholder="Correo electrónico"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={formData.email}
+              onChangeText={(value) => handleChange("email", value)}
+              onBlur={() => formSubmitted && validateField("email", formData.email)}
+            />
+            {errors.email ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{errors.email}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Feather name="lock" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={[styles.input, errors.password ? styles.inputError : null]}
+              placeholder="Contraseña"
+              secureTextEntry={!showPassword}
+              value={formData.password}
+              onChangeText={(value) => handleChange("password", value)}
+              onBlur={() => formSubmitted && validateField("password", formData.password)}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon} 
+              onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Feather name={showPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
+            </TouchableOpacity>
+            {errors.password ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{errors.password}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <View style={styles.inputIconContainer}>
+              <Feather name="lock" size={20} color={colors.gray[400]} />
+            </View>
+            <TextInput
+              style={[styles.input, errors.confirmPassword ? styles.inputError : null]}
+              placeholder="Confirmar Contraseña"
+              secureTextEntry={!showConfirmPassword}
+              value={formData.confirmPassword}
+              onChangeText={(value) => handleChange("confirmPassword", value)}
+              onBlur={() => formSubmitted && validateField("confirmPassword", formData.confirmPassword)}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon} 
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={colors.gray[400]} />
+            </TouchableOpacity>
+            {errors.confirmPassword ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{errors.confirmPassword}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.registerButton, loading && styles.disabledButton]} 
+            onPress={handleSubmit} 
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <>
+                <Text style={styles.registerButtonText}>CREAR CUENTA</Text>
+                <Feather name="arrow-right" size={20} color="white" style={styles.buttonIcon} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.registerButton} onPress={handleSubmit} disabled={loading}>
-          <Text style={styles.registerButtonText}>{loading ? "PROCESANDO..." : "CREAR CUENTA"}</Text>
-          {!loading && <Feather  name="arrow-right" size={20} color="white" style={styles.buttonIcon} />}
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.loginContainer}>
-        <Text style={styles.loginText}>
-          Tienes una cuenta?{" "}
-          <Text style={styles.loginLink} onPress={() => navigation.navigate("Login")}>
-            Inicia sesión
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>
+            ¿Tienes una cuenta?{" "}
+            <Text 
+              style={styles.loginLink} 
+              onPress={() => navigation.navigate("Login")}
+            >
+              Inicia sesión
+            </Text>
           </Text>
-        </Text>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   )
 }
 
@@ -178,9 +379,15 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 6,
     marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorIcon: {
+    marginRight: 8,
   },
   errorText: {
     color: colors.red[700],
+    flex: 1,
   },
   form: {
     marginBottom: 24,
@@ -193,7 +400,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 12,
     top: 0,
-    bottom: 0,
+    height: 48,  // Altura explícita para alinear con el input
     justifyContent: "center",
     zIndex: 1,
   },
@@ -206,12 +413,25 @@ const styles = StyleSheet.create({
     paddingLeft: 40,
     paddingRight: 40,
     fontSize: 16,
+    height: 48,  // Altura explícita para mejor alineación
+  },
+  inputError: {
+    borderColor: colors.red[500],
+    borderWidth: 1,
+  },
+  fieldErrorContainer: {
+    marginTop: 4,
+    paddingHorizontal: 4,
+  },
+  fieldErrorText: {
+    color: colors.red[600],
+    fontSize: 12,
   },
   eyeIcon: {
     position: "absolute",
     right: 12,
     top: 0,
-    bottom: 0,
+    height: 48,  // Altura explícita para alinear con el input
     justifyContent: "center",
   },
   registerButton: {
@@ -222,6 +442,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
+    height: 48,  // Altura explícita para consistencia
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   registerButtonText: {
     color: "white",
@@ -243,4 +467,3 @@ const styles = StyleSheet.create({
     color: colors.indigo[600],
   },
 })
-
