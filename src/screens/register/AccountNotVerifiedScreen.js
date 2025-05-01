@@ -16,6 +16,9 @@ import { Feather } from "@expo/vector-icons"
 import { colors } from "../../styles/colors"
 import axios from "axios"
 
+// Importar la variable de entorno
+import { API_BASE_URL } from "@env"
+
 const AccountNotVerifiedScreen = () => {
   const navigation = useNavigation()
   const [email, setEmail] = useState("")
@@ -24,9 +27,6 @@ const AccountNotVerifiedScreen = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [fadeAnim] = useState(new Animated.Value(0))
   const [errorFadeAnim] = useState(new Animated.Value(0))
-
-  // URL de la API basada en el archivo .env
-  const API_URL = "http://192.168.18.88:7777/api"
 
   // Efecto para la animación del mensaje de error
   useEffect(() => {
@@ -70,8 +70,8 @@ const AccountNotVerifiedScreen = () => {
     setError(null)
 
     try {
-      // Llamar al endpoint de reenvío de verificación
-      const response = await axios.post(`${API_URL}/resend-verification-email`, {
+      // Llamar al endpoint de reenvío de verificación usando API_BASE_URL
+      const response = await axios.post(`${API_BASE_URL}/resend-verification-email`, {
         email: email.trim(),
       })
 
