@@ -4,9 +4,9 @@ import { useState } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/Feather"
-import { useEvent } from "../../../../../contexts/EventContext"
+import { eventService } from "../../../../../services/api" 
 import { colors } from "../../../../../styles/colors"
-import { invitationService, userService, participantService } from "../../../../../services/api"
+import { invitationService, userService, participantService,notificationService } from "../../../../../services/api"
 import { useAuth } from '../../../../../contexts/AuthContext'
 
 // Función para generar contraseña aleatoria
@@ -32,6 +32,7 @@ export default function SendInvitationScreen() {
     email: "",
   })
   const { user } = useAuth()
+  const { getEventById } = eventService;
 
   const handleChange = (name, value) => {
     setFormData(prev => ({
@@ -109,7 +110,6 @@ export default function SendInvitationScreen() {
             email: formData.email,
             password: randomPassword,
           });
-        
         const newUser = response.data.usuario
         
         if (!newUser || !newUser.id_user) {
@@ -124,7 +124,22 @@ export default function SendInvitationScreen() {
         id_event: eventId,
         id_user: userId,
       })
-  
+
+      // Crear notificación de la invitación en la base de datos
+        // Obtener nombre del evento
+        const eventData = await eventService.getEvent(eventId)
+        console.log("Datos del evento recibidos:", eventData); 
+        const eventName = eventData?.data?.event_name || "un evento"
+        
+        const notificationPayload = {
+          user_id: userId,  // Make sure this is a number, not string
+          message: `Has sido invitado al evento "${eventName}"`
+        };
+
+        console.log("Notification payload:", notificationPayload);
+
+        await notificationService.createNotification(notificationPayload);
+
       if (success) {
         Alert.alert("Éxito", "Invitación enviada correctamente", [
           { text: "OK", onPress: () => navigation.navigate("ParticipantList", { id: eventId }) }

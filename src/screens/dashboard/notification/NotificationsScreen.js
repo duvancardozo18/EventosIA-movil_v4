@@ -61,21 +61,27 @@ export default function UserNotificationsScreen() {
     );
   };
 
-  const renderItem = ({ item }) => (
-    <View style={[styles.item, item.read_status && styles.readItem]}>
-      <Text style={styles.message}>{item.message}</Text>
-      <View style={styles.actions}>
-        {!item.read_status && (
-          <TouchableOpacity onPress={() => handleMarkAsRead(item.id_notification)}>
-            <Icon name="check-circle" size={20} color={colors.green[500]} />
+  const renderItem = ({ item }) => {
+    const formattedDate = new Date(item.created_at).toLocaleString(); // puedes personalizar formato si quieres
+  
+    return (
+      <View style={[styles.item, item.read_status && styles.readItem]}>
+        <Text style={styles.message}>{item.message}</Text>
+        <Text style={styles.date}>{formattedDate}</Text>
+        <View style={styles.actions}>
+          {!item.read_status && (
+            <TouchableOpacity onPress={() => handleMarkAsRead(item.id_notification)}>
+              <Icon name="check-circle" size={20} color={colors.green[500]} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => handleDelete(item.id_notification)}>
+            <Icon name="trash-2" size={20} color={colors.red[500]} />
           </TouchableOpacity>
-        )}
-        <TouchableOpacity onPress={() => handleDelete(item.id_notification)}>
-          <Icon name="trash-2" size={20} color={colors.red[500]} />
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
+  
   
 
   useFocusEffect(
@@ -156,8 +162,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
   },
+  date: {
+    fontSize: 12,
+    color: colors.gray[600],
+    marginBottom: 4,
+  },
+  
   readItem: {
-    backgroundColor: colors.gray[300], // Leída
+    backgroundColor: colors.gray[200], // Leída
   },
   
   message: {
