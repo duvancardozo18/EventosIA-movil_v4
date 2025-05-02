@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/Feather"
 import { useAuth } from "../../contexts/AuthContext"
 import { colors } from "../../styles/colors"
+import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const navigation = useNavigation()
@@ -199,6 +200,15 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => {
+            navigation.navigate('ChatBot');
+          }}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
+      </TouchableOpacity>
+
         <View style={styles.linksContainer}>
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>
@@ -226,6 +236,7 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
     </TouchableWithoutFeedback>
+    
   )
 }
 
@@ -404,5 +415,21 @@ const styles = StyleSheet.create({
   },
   verificationLink: {
     color: colors.indigo[600],
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 30,
+    backgroundColor: colors.indigo[600],
+    padding: 16, 
+    borderRadius: 32,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

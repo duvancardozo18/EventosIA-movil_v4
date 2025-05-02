@@ -59,6 +59,8 @@ import BillPaidScreen from "./src/screens/dashboard/myevents/event/billing/BillP
 import AddFoodScreen from "./src/screens/dashboard/myevents/event/food/AddFoodScreen";
 import EventEditedScreen from "./src/screens/dashboard/myevents/event/EventEditedScreen";
 import { BillingProvider } from "./src/contexts/BillingContext";
+import ChatBotScreen from "./src/screens/chatbot/ChatBotScreen";
+
 
 // Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -244,6 +246,10 @@ export default function App() {
                               <Stack.Screen
                                 name="BillPaid"
                                 component={BillPaidScreen}
+                              />
+                              <Stack.Screen
+                                name="ChatBot"
+                                component={ChatBotScreen}
                               />
                             </Stack.Navigator>
                           </UserProvider>

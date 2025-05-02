@@ -98,6 +98,7 @@ export default function DashboardScreen() {
           </View>
         </View>
       </TouchableOpacity>
+      
     );
   };
 
@@ -142,7 +143,6 @@ export default function DashboardScreen() {
         </View>
 
 
-
         {(!hasEvents && !loading && (!error || error === "No hay eventos registrados para este usuario.")) ? (
           <View style={styles.noEventsContainer}>
             <View style={styles.noEventsIcon}></View>
@@ -179,7 +179,17 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
+      
+      <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => {
+            navigation.navigate('ChatBot');
+          }}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
+      </TouchableOpacity>
       <BottomTabBar activeTab="home" />
+
     </View>
   );
 }
@@ -383,5 +393,22 @@ const styles = StyleSheet.create({
     color: colors.indigo[500],
     fontSize: 12,
   },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 80,
+    right: 30,
+    backgroundColor: colors.indigo[600],
+    padding: 16, 
+    borderRadius: 32,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
 })
 
