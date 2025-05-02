@@ -52,6 +52,35 @@ export const EventProvider = ({ children }) => {
   }
 
 
+  const FetchEventPrice = async (id) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("ID recibido:", id);
+      const response = await eventService.getPrice(id);
+      console.log("Respuesta completa del backend desde Eventcontex:", response); // Verifica la respuesta completa
+  
+      // Verifica que la respuesta contiene datos
+      if (response?.data) {
+        setCurrentEvent(response.data); // Asigna los datos correctamente
+        return response.data;
+      } else {
+        console.error("La respuesta no contiene los datos esperados.");
+        setError("La respuesta no contiene los datos esperados.");
+        return null;
+      }
+    } catch (err) {
+      console.error("Error al obtener los datos del evento:", err);
+      setError(err.response?.data?.message || "Error al obtener el evento");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+
+
   const fetchEventByIdForUserId = async (userId) => {
     try {
       console.log("Iniciando fetchEventByIdForUserId con userId:", userId);
@@ -334,6 +363,7 @@ export const EventProvider = ({ children }) => {
         updateParticipant,
         deleteParticipant,
         updateEventStatus,
+        FetchEventPrice
       }}
     >
       {children}

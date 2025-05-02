@@ -71,6 +71,7 @@ export const userService = {
   export const eventService = {
     getEvents: () => api.get("/events"),
     getEventByIdForUserId: (id) =>  api.get(`/events/users/${id}`),
+    getPrice: (id) => api.get(`/events/prices/${id}`),
     getEvent: (id) => api.get(`/events/${id}`),
     updateEvent: (id, formData) => {
       return api.put(`/events/${id}`, formData, {
@@ -190,18 +191,12 @@ export const invitationService = {
 
 // Servicios de facturación
 export const billingService = {
-  // Obtener la cotización o factura de un evento (GET /billing/:eventId)
-  getBilling: (eventId) => api.get(`/billing/${eventId}`),
+  getBillingByEventId: (eventId) => api.get(`/billing/${eventId}`),
+  createBilling: (data) => api.post('/billing', data),
+  updateBilling: (id, data) => api.put(`/billing/${id}`, data),
+  deleteBilling: (id) => api.delete(`/billing/${id}`),
+}
 
-  // Crear una nueva factura (POST /billing)
-  createBilling: (eventId, paymentMethod) => api.post('/billing', { event_id: eventId, payment_method: paymentMethod }),
-
-  // Aceptar la cotización (GET /billing/accept/:billingId)
-  acceptBilling: (billingId) => api.get(`/billing/accept/${billingId}`),
-
-  // Rechazar la cotización (GET /billing/reject/:billingId)
-  rejectBilling: (billingId) => api.get(`/billing/reject/${billingId}`)
-};
 
 export default api
 
