@@ -14,7 +14,7 @@ import { Linking } from "react-native";
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
-  const { fetchEventByIdForUserId, events, loading, error } = useEvent();
+  const { fetchEvents, fetchEventByIdForUserId, events, loading, error } = useEvent();
   const { user } = useAuth();
   const [hasEvents, setHasEvents] = useState(false);
   const scrollRef = useRef(null);
@@ -22,9 +22,17 @@ export default function DashboardScreen() {
   // Recargar eventos automáticamente al enfocarse la pantalla
   useFocusEffect(
     useCallback(() => {
-      console.log("Pantalla enfocada: recargando eventos");
-      fetchEventByIdForUserId(user.id_user);
-    }, [user?.id_user])
+      // Si el rol es "SuperAdmin"
+      if (user?.role === "SuperAdmin") {
+        console.log("Rol SuperAdmin: recargando todos los eventos");
+        fetchEvents(); 
+      }
+      // Si el rol es cualquier otro
+      else if (user?.role !== "SuperAdmin") {
+        console.log("Rol no es SuperAdmin: recargando eventos para este usuario");
+        fetchEventByIdForUserId(user.id_user);
+      }
+    }, [user?.id_user, user?.role])
   );
 
 
