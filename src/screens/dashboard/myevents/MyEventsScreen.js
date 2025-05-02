@@ -13,131 +13,56 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
-import { useEvent } from "../../../contexts/EventContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import BottomTabBar from "../../../components/BottomTabBar";
 import { colors } from "../../../styles/colors";
-import { participantService } from "../../../services/api";
+import { eventService } from "../../../services/api";
 import moment from "moment";
-import "moment/locale/es"; // Importar el locale español de moment
+import "moment/locale/es";
 
 export default function MyEventsScreen() {
   const navigation = useNavigation();
-  const [activeFilter, setActiveFilter] = useState("Gestor");
-  const [searchTerm, setSearchTerm] = useState("");
-  const { fetchEvents, events, loading, error } = useEvent();
   const { user } = useAuth();
-  const [participantEvents, setParticipantEvents] = useState([]);
-  const [isLoadingParticipantEvents, setIsLoadingParticipantEvents] =
-    useState(false);
-  const [hasEvents, setHasEvents] = useState(true);
+  const [allEvents, setAllEvents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("Gestor"); // Estado añadido para el filtro activo
 
   useEffect(() => {
     const loadEvents = async () => {
-      const fetchedEvents = await fetchEvents();
-      setHasEvents(fetchedEvents && fetchedEvents.length > 0);
+      try {
+        setLoading(true);
+        const response = await eventService.getEventByIdForUserId(user.id_user);
+        setAllEvents(response.data);
+        console.log("Eventos cargados:", response.data);
+        setError(null);
+      } catch (err) {
+        setError("Error al cargar los eventos.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadEvents();
-  }, []);
-
-  // Cargar eventos donde el usuario es participante cuando se selecciona el filtro "Participante"
-  useEffect(() => {
-    if (activeFilter === "Participante" && user) {
-      fetchParticipantEvents();
+    if (user?.id_user) {
+      loadEvents();
     }
-  }, [activeFilter, user]);
-
-  // Función para obtener los eventos donde el usuario es participante
-  const fetchParticipantEvents = async () => {
-    if (!user) return;
-
-    setIsLoadingParticipantEvents(true);
-    try {
-      // Obtenemos la lista completa de participantes usando el servicio
-      const response = await participantService.getParticipants();
-      const allParticipants = response.data;
-
-      // Filtramos para encontrar participaciones del usuario actual
-      // Comparamos user_id del participante con id_user del usuario autenticado
-      const userParticipations = allParticipants.filter(
-        (participant) => participant.user_id === user.id_user
-      );
-
-      const eventsAsParticipant = userParticipations.map((participation) => ({
-        id_event: participation.id_participants, // Nota: Aquí puede que necesites el ID real del evento
-        name: participation.event_name,
-        image_url: participation.event_image_url,
-        start_time: participation.event_start_time,
-        state: participation.status_name,
-        event_type: `Tipo ID: ${participation.type_of_event_id}`,
-      }));
-
-      setParticipantEvents(eventsAsParticipant);
-    } catch (error) {
-      console.error("Error al cargar eventos como participante:", error);
-    } finally {
-      setIsLoadingParticipantEvents(false);
-    }
-  };
-
-  // Filtrar eventos según el tipo seleccionado y el término de búsqueda
-  const filteredEvents = () => {
-    let filtered = [];
-
-    // Filtrar por rol
-    if (activeFilter === "Gestor") {
-      // Mantener solo eventos donde el usuario es el creador
-      filtered = events.filter(
-        (event) => event.user_id_created_by === user?.id_user
-      );
-    } else if (activeFilter === "Participante") {
-      filtered = participantEvents;
-    } else if (activeFilter === "Cliente") {
-      filtered = [];
-    }
-
-    // Filtrar por término de búsqueda
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (event) =>
-          event.name?.toLowerCase().includes(term) ||
-          event.description?.toLowerCase().includes(term)
-      );
-    }
-
-    // Asegurar que no hay duplicados mediante id_event
-    const uniqueEvents = {};
-    filtered.forEach((event) => {
-      uniqueEvents[event.id_event] = event;
-    });
-
-    return Object.values(uniqueEvents);
-  };
+  }, [user]);
 
   const formatDate = (dateString) => {
-    // Configurar moment en español
-    moment.locale('es');
-    
-    const date = moment(dateString); 
-    const day = date.format("D"); 
-    const month = date.format("MMM").toUpperCase(); 
-    const weekday = date.format("ddd").toUpperCase();
-    const time = date.utc().format("H:mm"); // Formato 24h más común en español
-
-    return `${day} ${month} - ${weekday} - ${time}`;
+    moment.locale("es");
+    const date = moment(dateString);
+    return `${date.format("D")} ${date.format("MMM").toUpperCase()} - ${date.format("ddd").toUpperCase()} - ${date.utc().format("H:mm")}`;
   };
 
   const renderEventItem = ({ item }) => (
     <TouchableOpacity
       style={styles.eventItem}
-      onPress={() => navigation.navigate("EventDetail", { id: item.id_event })}
+      onPress={() => navigation.navigate("EventDetail", { event_id: item.id_event })}
     >
       <View style={styles.eventImageContainer}>
-        {item.image_url &&
-        Array.isArray(item.image_url) &&
-        item.image_url.length > 0 ? (
+        {item.image_url && Array.isArray(item.image_url) && item.image_url.length > 0 ? (
           <Image
             source={{ uri: item.image_url[0] }}
             style={styles.eventImage}
@@ -148,6 +73,11 @@ export default function MyEventsScreen() {
             <Text style={styles.noImageText}>Sin imagen</Text>
           </View>
         )}
+        <View style={styles.dateTag}>
+          <Text style={styles.eventStateText}>
+            {item.state ? item.state : "Estado no disponible"}
+          </Text>
+        </View>
       </View>
       <View style={styles.eventInfo}>
         <Text style={styles.eventDate}>{formatDate(item.start_time)}</Text>
@@ -156,10 +86,14 @@ export default function MyEventsScreen() {
     </TouchableOpacity>
   );
 
-  if (
-    loading ||
-    (activeFilter === "Participante" && isLoadingParticipantEvents)
-  ) {
+  // Filtrado corregido para usar user_role del evento
+  const filteredEvents = allEvents.filter((event) => {
+    const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = event.user_role?.toLowerCase() === activeFilter.toLowerCase();
+    return matchesSearch && matchesRole;
+  });
+
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <Text>Cargando eventos...</Text>
@@ -167,28 +101,18 @@ export default function MyEventsScreen() {
     );
   }
 
-  const displayEvents = filteredEvents();
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
-          <Icon
-            name="arrow-left"
-            size={24}
-            color={colors.gray[800]}
-            style={{ marginTop: 25 }}
-          />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Mis eventos</Text>
       </View>
 
       <View style={styles.content}>
-        {error ? (
+        {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
-        ) : null}
+        )}
 
         <View style={styles.searchContainer}>
           <Icon
@@ -211,70 +135,36 @@ export default function MyEventsScreen() {
           contentContainerStyle={styles.filtersContainer}
           style={styles.filtersScrollView}
         >
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              activeFilter === "Gestor" && styles.activeFilterButton,
-            ]}
-            onPress={() => setActiveFilter("Gestor")}
-          >
-            <Text
+          {["Gestor", "participante", "cliente"].map((role) => (
+            <TouchableOpacity
+              key={role}
               style={[
-                styles.filterButtonText,
-                activeFilter === "Gestor" && styles.activeFilterButtonText,
+                styles.filterButton,
+                activeFilter === role && styles.activeFilterButton,
               ]}
+              onPress={() => setActiveFilter(role)}
             >
-              Gestor
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              activeFilter === "Participante" && styles.activeFilterButton,
-            ]}
-            onPress={() => setActiveFilter("Participante")}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                activeFilter === "Participante" &&
-                  styles.activeFilterButtonText,
-              ]}
-            >
-              Participante
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              activeFilter === "Cliente" && styles.activeFilterButton,
-            ]}
-            onPress={() => setActiveFilter("Cliente")}
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                activeFilter === "Cliente" && styles.activeFilterButtonText,
-              ]}
-            >
-              Cliente
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  activeFilter === role && styles.activeFilterButtonText,
+                ]}
+              >
+                {role.charAt(0).toUpperCase() + role.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
         <Text style={styles.sectionTitle}>Más recientes</Text>
 
-        {displayEvents.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {activeFilter === "Cliente"
-                ? `Función de ${activeFilter} no disponible por el momento`
-                : "No se encontraron eventos"}
-            </Text>
+            <Text style={styles.emptyText}>No se encontraron eventos</Text>
           </View>
         ) : (
           <FlatList
-            data={displayEvents}
+            data={filteredEvents}
             renderItem={renderEventItem}
             keyExtractor={(item) => item.id_event.toString()}
             contentContainerStyle={styles.eventsList}
@@ -361,7 +251,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.indigo[500],
   },
   filtersScrollView: {
-    maxHeight: 70, // Controla la altura del contenedor del ScrollView
+    maxHeight: 70,
   },
   filterButtonText: {
     color: colors.gray[700],
@@ -422,10 +312,6 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontWeight: "bold",
     marginBottom: 4,
-  },
-  eventDescription: {
-    color: colors.gray[500],
-    fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
