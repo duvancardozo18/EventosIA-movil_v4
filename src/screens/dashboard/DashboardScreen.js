@@ -27,10 +27,18 @@ export default function DashboardScreen() {
     }, [user?.id_user])
   );
 
-  
+
   useEffect(() => {
     setHasEvents(events && events.length > 0);
   }, [events]);
+
+
+  const uniqueEvents = events.filter((value, index, self) =>
+    index === self.findIndex((t) => (
+      t.id_event === value.id_event
+    ))
+  );
+  
 
   const renderEventCard = ({ item }) => {
     if (!item || !item.id_event) {
@@ -146,7 +154,7 @@ export default function DashboardScreen() {
 
             {events && events.length > 0 ? (
               <FlatList
-                data={events}
+                data={uniqueEvents}
                 renderItem={renderEventCard}
                 keyExtractor={(item) =>
                   item.id_event ? item.id_event.toString() : Math.random().toString()
