@@ -70,6 +70,7 @@ export const userService = {
 // Servicios de eventos
   export const eventService = {
     getEvents: () => api.get("/events"),
+    getEventByIdForUserId: (id) =>  api.get(`/events/users/${id}`),
     getEvent: (id) => api.get(`/events/${id}`),
     updateEvent: (id, formData) => {
       return api.put(`/events/${id}`, formData, {

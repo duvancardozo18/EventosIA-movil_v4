@@ -1,81 +1,67 @@
 "use client";
 
-
-import { useEffect, useState, useRef, useCallback } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Alert } from "react-native"
-import { useFocusEffect } from "@react-navigation/native"
-import { useNavigation } from "@react-navigation/native"
-import { useEvent } from "../../contexts/EventContext"
-import { useAuth } from "../../contexts/AuthContext"
-import BottomTabBar from "../../components/BottomTabBar"
-import { colors } from "../../styles/colors"
+import { useEffect, useState, useRef, useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Alert } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { useEvent } from "../../contexts/EventContext";
+import { useAuth } from "../../contexts/AuthContext";
+import BottomTabBar from "../../components/BottomTabBar";
+import { colors } from "../../styles/colors";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
-import { Linking } from 'react-native';
-
+import { Linking } from "react-native";
 
 export default function DashboardScreen() {
-  const navigation = useNavigation()
-  const { fetchEvents, events, loading, error } = useEvent()
-  const { user } = useAuth()
-  const [hasEvents, setHasEvents] = useState(false)
-  const scrollRef = useRef(null)
+  const navigation = useNavigation();
+  const { fetchEventByIdForUserId, events, loading, error } = useEvent();
+  const { user } = useAuth();
+  const [hasEvents, setHasEvents] = useState(false);
+  const scrollRef = useRef(null);
 
+  // Recargar eventos automáticamente al enfocarse la pantalla
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Pantalla enfocada: recargando eventos");
+      fetchEventByIdForUserId(user.id_user);
+    }, [user?.id_user])
+  );
 
-    // Recargar eventos automáticamente al enfocarse la pantalla
-    useFocusEffect(
-      useCallback(() => {
-        fetchEvents();
-      }, [])
-    );
-    
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const fetchedEvents = await fetchEvents()
-        setHasEvents(fetchedEvents && fetchedEvents.length > 0)
-      } catch (err) {
-        console.error("Error loading events:", err)
-        Alert.alert(
-          "Error", 
-          "Hubo un problema al cargar los eventos. Por favor, intenta nuevamente."
-        )
-      }
-    }
-    loadEvents();
-  }, []);
   
+  useEffect(() => {
+    setHasEvents(events && events.length > 0);
+  }, [events]);
+
   const renderEventCard = ({ item }) => {
-    // Ensure item exists before rendering
     if (!item || !item.id_event) {
-      return null
+      return null;
     }
-    
+
     return (
-      <TouchableOpacity 
-        style={styles.eventCard} 
+      <TouchableOpacity
+        style={styles.eventCard}
         onPress={() => {
-          navigation.navigate("EventDetail", { event_id: item.id_event })
+          navigation.navigate("EventDetail", { event_id: item.id_event });
         }}
       >
-      <View style={styles.eventImageContainer}>
-        {item.image_url && Array.isArray(item.image_url) && item.image_url.length > 0 ? (
-          <Image
-            source={{ uri: item.image_url[0] }}
-            style={styles.eventImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.noImageContainer}>
-            <Text style={styles.noImageText}>Sin imagen</Text>
+        <View style={styles.eventImageContainer}>
+          {item.image_url && Array.isArray(item.image_url) && item.image_url.length > 0 ? (
+            <Image
+              source={{ uri: item.image_url[0] }}
+              style={styles.eventImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Text style={styles.noImageText}>Sin imagen</Text>
+            </View>
+          )}
+          <View style={styles.dateTag}>
+            <Text style={styles.eventStateText}>
+              {item.state ? item.state : "Estado no disponible"}
+            </Text>
           </View>
-        )}
-        <View style={styles.dateTag}>
-          <Text style={styles.eventStateText}>
-            {item.state ? item.state : "Estado no disponible"}
-          </Text>
         </View>
-      </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventTitle} numberOfLines={1}>
             {item.name}
@@ -89,15 +75,15 @@ export default function DashboardScreen() {
             </Text>
           </View>
           <View style={styles.locationContainer}>
-            <FontAwesome6 name="location-dot" size={16} style={styles.locationDot}/>
+            <FontAwesome6 name="location-dot" size={16} style={styles.locationDot} />
             <Text style={styles.locationText} numberOfLines={1}>
               {item.location ? `${item.location}` : "Sin ubicación"}
             </Text>
           </View>
         </View>
       </TouchableOpacity>
-    )
-  }
+    );
+  };
 
   if (loading) {
     return (
@@ -115,22 +101,21 @@ export default function DashboardScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.createButtonContainer}>
-        
-        {user?.role === "User" && ( 
+          {user?.role === "User" && (
             <TouchableOpacity
               style={styles.createButton}
               onPress={() => {
-                const phoneNumber = '573173453174'; 
-                const message = 'Hola, necesito comunicarme con un gestor.';
+                const phoneNumber = "573173453174";
+                const message = "Hola, necesito comunicarme con un gestor.";
                 const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                Linking.openURL(url).catch(err => console.error("Error al abrir WhatsApp", err));
+                Linking.openURL(url).catch((err) => console.error("Error al abrir WhatsApp", err));
               }}
             >
               <Text style={styles.createButtonText}>COMUNICARME CON UN GESTOR</Text>
             </TouchableOpacity>
           )}
 
-        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+          {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
             <TouchableOpacity
               style={styles.createButton}
               onPress={() => navigation.navigate("CreateEvent")}
@@ -140,23 +125,11 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity 
-              style={styles.retryButton}
-              onPress={() => fetchEvents()}
-            >
-              <Text style={styles.retryButtonText}>Reintentar</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
 
-        {!hasEvents && !loading && !error ? (
+
+        {(!hasEvents && !loading && (!error || error === "No hay eventos registrados para este usuario.")) ? (
           <View style={styles.noEventsContainer}>
-            <View style={styles.noEventsIcon}>
-              {/* Aquí iría un icono de calendario o similar */}
-            </View>
+            <View style={styles.noEventsIcon}></View>
             <Text style={styles.noEventsTitle}>No hay eventos</Text>
             <Text style={styles.noEventsText}>
               Comunícate con un gestor de eventos
@@ -175,7 +148,9 @@ export default function DashboardScreen() {
               <FlatList
                 data={events}
                 renderItem={renderEventCard}
-                keyExtractor={(item) => (item.id_event ? item.id_event.toString() : Math.random().toString())}
+                keyExtractor={(item) =>
+                  item.id_event ? item.id_event.toString() : Math.random().toString()
+                }
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.eventsList}
@@ -192,6 +167,7 @@ export default function DashboardScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

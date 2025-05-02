@@ -2,14 +2,23 @@
 
 import { createContext, useState, useContext } from "react"
 import { eventService, foodService, resourceService, participantService } from "../services/api"
+import { useAuth } from '../contexts/AuthContext';  
+
 
 const EventContext = createContext()
+
+
+
 
 export const EventProvider = ({ children }) => {
   const [events, setEvents] = useState([])
   const [currentEvent, setCurrentEvent] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Obtener el ID del usuario desde el contexto de autenticación
+  const { user } = useAuth();
+  const userId = user?.id; 
 
   // Eventos
   const fetchEvents = async () => {
@@ -41,6 +50,33 @@ export const EventProvider = ({ children }) => {
       setLoading(false)
     }
   }
+
+
+  const fetchEventByIdForUserId = async (userId) => {
+    try {
+      console.log("Iniciando fetchEventByIdForUserId con userId:", userId);
+      setLoading(true);
+      setError(null);
+      const response = await eventService.getEventByIdForUserId(userId);
+      console.log("Respuesta del backend:", response.data);
+      setEvents(response.data);
+      return response.data;
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setEvents([]);
+        setError("No hay eventos registrados para este usuario.");
+      } else {
+        setError("Error al cargar los eventos.");
+      }
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+  
+  
 
   const createEvent = async (formData) => {
     try {
@@ -283,6 +319,7 @@ export const EventProvider = ({ children }) => {
         error,
         fetchEvents,
         fetchEvent,
+        fetchEventByIdForUserId,
         createEvent,
         updateEvent,
         deleteEvent,
