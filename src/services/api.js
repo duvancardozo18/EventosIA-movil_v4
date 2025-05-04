@@ -8,7 +8,7 @@ const api = axios.create({
   headers: {
     "Accept": "application/json", // Cambiado de Content-Type
   },
-  withCredentials: true,  // ⚠️ Comenta o elimina esta línea
+  //withCredentials: true,  
 });
 
 // Interceptor mejorado
