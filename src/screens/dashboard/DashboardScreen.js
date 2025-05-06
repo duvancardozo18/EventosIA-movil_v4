@@ -183,7 +183,7 @@ export default function DashboardScreen() {
       <TouchableOpacity
           style={styles.floatingButton}
           onPress={() => {
-            navigation.navigate('ChatBot');
+            navigation.navigate('ChatBotScreen');
           }}
         >
           <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />

@@ -248,7 +248,7 @@ export default function App() {
                                 component={BillPaidScreen}
                               />
                               <Stack.Screen
-                                name="ChatBot"
+                                name="ChatBotScreen"
                                 component={ChatBotScreen}
                               />
                             </Stack.Navigator>
