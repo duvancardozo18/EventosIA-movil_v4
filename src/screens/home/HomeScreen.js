@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { colors } from "../../styles/colors"
+import FloatingChatButton from "../../components/FloatingChatButton";
+
 
 export default function HomeScreen() {
   const navigation = useNavigation()
@@ -32,7 +34,10 @@ export default function HomeScreen() {
           <Text style={styles.secondaryButtonText}>CREAR CUENTA</Text>
         </TouchableOpacity>
       </View>
+      {/* Botón flotante del chat */}
+      <FloatingChatButton />
     </View>
+    
   )
 }
 
