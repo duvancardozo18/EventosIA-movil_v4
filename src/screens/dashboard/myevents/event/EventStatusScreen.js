@@ -102,38 +102,27 @@ const EventStatusScreen = () => {
         </TouchableOpacity>
         <Text style={styles.title}>Estado del evento</Text>
       </View>
-
-    
       <View style={styles.statusContainer}>
         {statusOptions.map((status) => (
           <TouchableOpacity
-              key={status.id}
-              style={[
-                styles.statusOption,
-                selectedStatus === status.id && styles.selectedStatus,
-              ]}
-              onPress={() => setSelectedStatus(status.id)}
-            >
-              <Feather
-                name={status.icon}
-                size={24}
-                color={selectedStatus === status.id ? colors.white : status.color}
-              />
-              <Text
-                style={[
-                  styles.statusText,
-                  selectedStatus === status.id && { color: colors.white },
-                ]}
-              >
-                {status.name}
-              </Text>
-              {selectedStatus === status.id && (
-                <View style={styles.checkmark}>
-                  <Feather name="check" size={16} color={colors.white} />
-                </View>
-              )}
-            </TouchableOpacity>
-
+            key={status.id}
+            style={styles.statusOption} // Eliminamos la referencia a selectedStatus
+            onPress={() => setSelectedStatus(status.id)}
+          >
+            <Feather
+              name={status.icon}
+              size={24}
+              color={selectedStatus === status.id ? colors.white : status.color}
+            />
+            <Text style={styles.statusText}>
+              {status.name}
+            </Text>
+            {selectedStatus === status.id && (
+              <View style={styles.checkmark}>
+                <Feather name="check" size={16} color={colors.white} />
+              </View>
+            )}
+          </TouchableOpacity>
         ))}
       </View>
 
