@@ -3,8 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
+import { useAuth } from "../../../../../../contexts/AuthContext";
+import { Feather } from '@expo/vector-icons';
 
-const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor }) => {
+const ParticipantsTab = ({ participants, loading, event_id, navigation}) => {
   const handleAddPress = () => {
     navigation.navigate("SendInvitation", { id: event_id });
   };
@@ -13,10 +15,13 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor
     return <Text style={styles.loadingText}>Cargando participantes...</Text>;
   }
 
+  const { user } = useAuth();
   const pendingCount = participants.filter(p => p.status_name === "Pendiente").length;
   const confirmedCount = participants.filter(p => p.status_name === "Confirmado").length;
   const attendedCount = participants.filter(p => p.status_name === "Asistió").length;
   const canceledCount = participants.filter(p => p.status_name === "Cancelado").length;
+
+
 
   return (
     <>
@@ -55,8 +60,12 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor
       </View>
     </View>
 
-      {/* Botón de agregar 
-    {isGestor && <AddButton onPress={handleAddPress} />}*/}
+
+      {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+      <AddButton onPress={handleAddPress} />
+      )}
+
+    
       {/* Participantes o mensaje vacío */}
       {participants.length > 0 ? (
         participants.slice(0, 3).map((participant, index) => (
@@ -66,9 +75,11 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation, isGestor
           />
         ))
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No hay participantes registrados</Text>
-        </View>
+          <View style={styles.emptyMessageContainer}>
+            <Feather name="users" size={60} color={colors.textSecondary} />
+            <Text style={styles.emptyText}>No hay participantes agregados</Text>
+            <Text style={styles.emptySubtext}>Invita personas para que formen parte de tu evento.</Text>
+          </View>
       )}
 
       {/* Siempre muestra Ver Todos */}
@@ -234,6 +245,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     gap: 1, 
   },
+  emptyMessageContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    maxWidth: '80%',
+  }
 });
 
 export default ParticipantsTab;
