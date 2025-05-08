@@ -7,6 +7,8 @@ import { useEvent } from "../../../../../contexts/EventContext";
 import { colors } from "../../../../../styles/colors";
 import CardList from '../../../../../components/CardList';
 import { useCallback } from "react";
+import Icon from "react-native-vector-icons/Feather";
+
 
 const FoodListScreen = () => {
   const navigation = useNavigation();
@@ -113,10 +115,10 @@ const FoodListScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={24} color={colors.gray[800]} />
         </TouchableOpacity>
-        <Text style={styles.title}>Alimentos del Evento</Text>
+          <Text style={styles.headerTitle}>Alimentos</Text>
       </View>
 
       <TouchableOpacity style={styles.addButton} onPress={handleAddFood}>
@@ -160,15 +162,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    paddingTop: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginTop: 20,
   },
   backButton: {
     marginRight: 16,
@@ -246,6 +239,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
     maxWidth: "80%",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    marginTop: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 16,
   },
 });
 

@@ -176,8 +176,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
-    paddingBottom: 0,
+    marginTop: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 16,
   },
   content: {
     flexGrow: 1,

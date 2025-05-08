@@ -4,8 +4,11 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { useResource } from "../../../../../contexts/ResourceContext";
 import { useEvent } from "../../../../../contexts/EventContext";
+import { useAuth } from "../../../../../contexts/AuthContext";
 import { colors } from "../../../../../styles/colors";
 import CardList from "../../../../../components/CardList";
+import Icon from "react-native-vector-icons/Feather";
+
 
 const ResourceListScreen = () => {
   const navigation = useNavigation();
@@ -16,6 +19,8 @@ const ResourceListScreen = () => {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
+
 
   useEffect(() => {
     loadResources();
@@ -87,24 +92,31 @@ const ResourceListScreen = () => {
         totalCost: item.quantity_available * item.price,
         description: item.description || "Sin notas adicionales"
       }}
-      onEdit={() => handleEditResource(item.id_resource || item.id)}
-      onDelete={() => handleDeleteResource(item.id_resource || item.id)}
+      {...((user?.role === "SuperAdmin" || user?.role === "EventManager") && {
+        onEdit: () => handleEditResource(item.id_resource || item.id),
+        onDelete: () => handleDeleteResource(item.id_resource || item.id)
+      })}
     />
-  );  
+  );
+  
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Recursos del Evento</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Icon name="arrow-left" size={24} color={colors.gray[800]} />
+      </TouchableOpacity>
+        <Text style={styles.headerTitle}>Recursos</Text>
       </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddResource}>
-        <Feather name="plus" size={20} color={colors.white} />
-        <Text style={styles.addButtonText}>Agregar Recurso</Text>
-      </TouchableOpacity>
+      {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+        <TouchableOpacity style={styles.addButton} onPress={handleAddResource}>
+          <Feather name="plus" size={20} color={colors.white} />
+          <Text style={styles.addButtonText}>Agregar Recurso</Text>
+        </TouchableOpacity>
+      )}
+
+
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -143,15 +155,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    paddingTop: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginTop: 20,
   },
   backButton: {
     marginRight: 16,
@@ -230,6 +233,20 @@ const styles = StyleSheet.create({
     marginTop: 8,
     maxWidth: "80%",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    marginTop: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 16,
+  },
+
 });
 
 export default ResourceListScreen;
