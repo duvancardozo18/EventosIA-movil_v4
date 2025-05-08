@@ -1,9 +1,5 @@
 "use client";
 
-//import { useState, useEffect, useCallback } from "react";
-//import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
-//import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native"
-
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native"
 import { useNavigation, useRoute, useIsFocused } from "@react-navigation/native"
@@ -17,6 +13,7 @@ import TabSection from "./detaileventsection/TabSection";
 import Button from "../../../../components/Button";
 import EditEventButton from "../../../../components/EditEventButton";
 import { useAuth } from "../../../../contexts/AuthContext";
+import Icon from "react-native-vector-icons/Feather"
 
 
 export default function CompleteEventScreen() {
@@ -224,6 +221,12 @@ export default function CompleteEventScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
+          <Icon name="arrow-left" size={24} color={colors.gray[800]} marginTop={40}/>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Detalles del Evento</Text>
+      </View>
       <ScrollView style={styles.content}>
         {/* Parte superior del evento */}
         <EventHeader
@@ -305,5 +308,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.gray[500],
     marginTop: 20,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 16,
+    marginTop: 40,
   },
 });
