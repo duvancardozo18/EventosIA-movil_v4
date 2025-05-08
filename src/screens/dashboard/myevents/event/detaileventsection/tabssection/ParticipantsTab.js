@@ -82,13 +82,15 @@ const ParticipantsTab = ({ participants, loading, event_id, navigation}) => {
           </View>
       )}
 
-      {/* Siempre muestra Ver Todos */}
-      <TouchableOpacity 
-        style={styles.viewAllButton}
-        onPress={() => navigation.navigate("ParticipantList", { id: event_id })}
-      >
-        <Text style={styles.viewAllText}>Ver todos</Text>
-      </TouchableOpacity>
+      {/* Mostrar "Ver todos" solo si hay participantes */}
+      {participants.length > 0 && (
+        <TouchableOpacity 
+          style={styles.viewAllButton}
+          onPress={() => navigation.navigate("ParticipantList", { id: event_id })}
+        >
+          <Text style={styles.viewAllText}>Ver todos</Text>
+        </TouchableOpacity>
+      )}
     </>
   );
 };

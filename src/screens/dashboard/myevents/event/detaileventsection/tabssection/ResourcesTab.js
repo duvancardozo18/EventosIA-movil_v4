@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 import DetailsButton from '../../../../../../components/DetailsButtton';
@@ -7,6 +7,8 @@ import ResourceCard from '../../../../../../components/Card';
 import { useEvent } from '../../../../../../contexts/EventContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { useAuth } from "../../../../../../contexts/AuthContext";
+
 
 const ResourcesTab = ({ navigation, event_id }) => {
   const [resources, setResources] = useState([]);
@@ -14,6 +16,10 @@ const ResourcesTab = ({ navigation, event_id }) => {
   const [error, setError] = useState(null);
 
   const { fetchEventResources } = useEvent();
+  const { user } = useAuth();
+
+  
+  
 
   console.log("Event ID in ResourcesTab:", event_id);
 
@@ -69,7 +75,6 @@ const ResourcesTab = ({ navigation, event_id }) => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <AddButton onPress={handleAddPress} />
       </View>
     );
   }
@@ -77,37 +82,35 @@ const ResourcesTab = ({ navigation, event_id }) => {
   if (resources.length === 0) {
     return (
       <View style={styles.container}>
+        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
         <AddButton onPress={handleAddPress} />
-        
+        )}
         <View style={styles.emptyMessageContainer}>
           <Feather name="box" size={60} color={colors.textSecondary} />
           <Text style={styles.emptyText}>No hay recursos agregados</Text>
           <Text style={styles.emptySubtext}>Agrega recursos para tu evento como equipos, decoración, etc.</Text>
         </View>
-        
-        <DetailsButton 
-          onPress={() => navigation.navigate("ResourceList", { eventId: event_id })} 
-          text="Ver todos los recursos" 
-        />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <AddButton onPress={handleAddPress} />
-
+      {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+        <AddButton onPress={handleAddPress} />
+      )}
       {resources.slice(0, 3).map(item => (
         <ResourceCard
           key={item.id}
           item={item}
         />
       ))}
-
-      <DetailsButton 
-        onPress={() => navigation.navigate("ResourceList", { eventId: event_id })} 
-        text="Ver todos los recursos" 
-      />
+      <TouchableOpacity 
+            style={styles.viewAllButton}
+            onPress={() => navigation.navigate("ResourceList", { eventId: event_id })}
+          >
+            <Text style={styles.viewAllText}>Ver todos</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -157,7 +160,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     maxWidth: '80%',
-  }
+  },
+  viewAllButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    marginTop: 8, 
+  },  
+  viewAllText: {
+    color: colors.indigo[500],
+    fontWeight: '500',
+  },
 });
 
 export default ResourcesTab;

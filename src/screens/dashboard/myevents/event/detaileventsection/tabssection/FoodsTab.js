@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator,TouchableOpacity } from 'react-native';
 import { colors } from '../../../../../../styles/colors';
 import AddButton from '../../../../../../components/AddButton';
 import DetailsButton from '../../../../../../components/DetailsButtton';
@@ -7,11 +7,15 @@ import FoodCard from '../../../../../../components/Card';  // Usamos la tarjeta 
 import { useEvent } from '../../../../../../contexts/EventContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { useAuth } from "../../../../../../contexts/AuthContext";
+
 
 const FoodsTab = ({ navigation, event_id }) => {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
+  
 
   const { fetchEventFoods } = useEvent();
 
@@ -68,7 +72,6 @@ const FoodsTab = ({ navigation, event_id }) => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <AddButton onPress={handleAddPress} />
       </View>
     );
   }
@@ -77,21 +80,14 @@ const FoodsTab = ({ navigation, event_id }) => {
   if (foods.length === 0) {
     return (
       <View style={styles.container}>
+        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
         <AddButton onPress={handleAddPress} />
-        
+        )}
         <View style={styles.emptyMessageContainer}>
           <Feather name="coffee" size={60} color={colors.gray[400]} />
           <Text style={styles.emptyText}>No hay alimentos</Text>
           <Text style={styles.emptySubtext}>Agrega alimentos para tu evento</Text>
         </View>
-        
-        <DetailsButton 
-          onPress={() => navigation.navigate("FoodList", { 
-            event_id: event_id, 
-            foodsData: foods 
-          })} 
-          text="Ver todos los alimentos" 
-        />
       </View>
     );
   }
@@ -99,8 +95,9 @@ const FoodsTab = ({ navigation, event_id }) => {
   // Si hay alimentos, mostrar los primeros 3 y el botón "Ver todos los alimentos"
   return (
     <View style={styles.container}>
-      <AddButton onPress={handleAddPress} />
-
+      {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+        <AddButton onPress={handleAddPress} />
+      )}
       {/* Mostrar solo los primeros 3 alimentos */}
       {foods.slice(0, 3).map(item => (
         <FoodCard
@@ -108,12 +105,12 @@ const FoodsTab = ({ navigation, event_id }) => {
         item={item}
         />
       ))}
-
-      {/* Siempre mostrar el botón "Ver todos los alimentos" */}
-      <DetailsButton 
-        onPress={() => navigation.navigate("FoodList", { event_id: event_id})} 
-        text="Ver todos los alimentos" 
-      />
+       <TouchableOpacity 
+              style={styles.viewAllButton}
+              onPress={() => navigation.navigate("FoodList", { event_id: event_id })}
+            >
+              <Text style={styles.viewAllText}>Ver todos</Text>
+        </TouchableOpacity>
     </View>
   );
 };
@@ -164,6 +161,15 @@ const styles = StyleSheet.create({
     color: colors.gray[500],
     marginBottom: 20,
     maxWidth: '80%',
+  },
+  viewAllButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    marginTop: 8, 
+  },  
+  viewAllText: {
+    color: colors.indigo[500],
+    fontWeight: '500',
   },
 });
 
