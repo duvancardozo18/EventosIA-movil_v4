@@ -14,6 +14,8 @@ import { colors } from "../../../../../styles/colors";
 import { useEvent } from "../../../../../contexts/EventContext";
 import { billingService } from "../../../../../services/api";
 import BottomTabBar from "../../../../../components/BottomTabBar";
+import { useAuth } from "../../../../../contexts/AuthContext";
+
 
 
 
@@ -31,6 +33,8 @@ const BillingScreen = () => {
   const [event, setEvent, ] = useState(null);
   const [loading, setLoading] = useState(true);
   const { eventId } = route.params || {};
+  const { user } = useAuth();
+
 
  
 
@@ -230,7 +234,10 @@ const BillingScreen = () => {
           >
             <Text style={styles.linkButtonText}>PAGAR</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          
+
+           {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+            <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => {
               Alert.alert(
@@ -262,9 +269,13 @@ const BillingScreen = () => {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
+              
               <Text style={styles.deleteButtonText}>ELIMINAR CLIENTE</Text>
             )}
-          </TouchableOpacity>
+          </TouchableOpacity>    
+        )}
+
+
 
 
         </View>

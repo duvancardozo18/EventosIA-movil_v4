@@ -33,12 +33,22 @@ export default function SendInvitationScreen() {
   })
   const { user } = useAuth()
   const { getEventById } = eventService;
+  const [emailError, setEmailError] = useState("")
 
   const handleChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }))
+
+     // Validación en tiempo real del correo electrónico
+    if (name === "email") {
+      if (!validateEmail(value)) {
+        setEmailError("Por favor ingrese un correo electrónico válido");
+      } else {
+        setEmailError("");
+      }
+    }
   }
 
   const validateEmail = (email) => {
@@ -47,15 +57,27 @@ export default function SendInvitationScreen() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.name) {
+      Alert.alert("Campo requerido", "Por favor ingrese su nombre")
+      return
+    }
+
+    if (!formData.last_name) {
+      Alert.alert("Campo requerido", "Por favor ingrese su apellido")
+      return
+    }
+
     if (!formData.email) {
-      Alert.alert("Error", "Por favor ingrese un correo electrónico")
+      Alert.alert("Campo requerido", "Por favor ingrese un correo electrónico")
       return
     }
-  
+
     if (!validateEmail(formData.email)) {
-      Alert.alert("Error", "Por favor ingrese un correo electrónico válido")
+      Alert.alert("Correo inválido", "Por favor ingrese un correo electrónico válido")
       return
     }
+
+
   
     setLoading(true)
     setError("")
@@ -180,10 +202,11 @@ export default function SendInvitationScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Nombre"
+              placeholder="Nombre *"
               value={formData.name}
               onChangeText={(value) => handleChange("name", value)}
               editable={!loading}
+              maxLength={25}
             />
           </View>
 
@@ -193,27 +216,36 @@ export default function SendInvitationScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Apellido"
+              placeholder="Apellido *"
               value={formData.last_name}
               onChangeText={(value) => handleChange("last_name", value)}
               editable={!loading}
+              maxLength={25}
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <View style={styles.inputIconContainer}>
-              <Icon name="mail" size={20} color={colors.gray[400]} />
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputIconContainer}>
+                <Icon name="mail" size={20} color={colors.gray[400]} />
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Correo electrónico *"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(value) => handleChange("email", value)}
+                editable={!loading}
+                maxLength={35}
+              />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Correo electrónico"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={formData.email}
-              onChangeText={(value) => handleChange("email", value)}
-              editable={!loading}
-            />
+            {emailError ? (
+              <Text style={styles.errorText}>{emailError}</Text>
+            ) : null}
           </View>
+
+
 
           <TouchableOpacity 
             style={[styles.submitButton, loading && styles.disabledButton]} 
@@ -306,4 +338,10 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.6,
   },
+  errorText: {
+    color: colors.red[700],
+    marginTop: 5,
+    fontSize: 12,
+  }
+  
 })
