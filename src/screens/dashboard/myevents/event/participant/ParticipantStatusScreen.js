@@ -108,14 +108,14 @@ const ParticipantStatusScreen = () => {
             key={status.id}
             style={[
               styles.statusOption,
-              selectedStatus === status.id && styles.selectedStatus,
+              selectedStatus === status.id && styles.statusOption,
             ]}
             onPress={() => setSelectedStatus(status.id)}
           >
             <Feather
               name={status.icon}
               size={24}
-              color={selectedStatus === status.id ? colors.white : status.color}
+              color={status.color}
             />
             <Text
               style={[
