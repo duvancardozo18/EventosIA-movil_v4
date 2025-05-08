@@ -100,27 +100,29 @@ export default function ParticipantListScreen() {
       </View>
   
       <View style={styles.participantActions}>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => {
-          //console.log("item:", item); // Verifica que 'item' tiene el campo 'id_participants'
-          navigation.navigate("ParticipantStatus", {
-            participantId: item.id_participants,  // Usa 'id_participants' en lugar de 'id'
-            eventId: id,
-          });
-        }}
-      >
-        <Icon name="edit-2" size={20} color={colors.indigo[500]} />
-      </TouchableOpacity>
-
-
-
+      {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
         <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => {
+              //console.log("item:", item); // Verifica que 'item' tiene el campo 'id_participants'
+              navigation.navigate("ParticipantStatus", {
+                participantId: item.id_participants,  // Usa 'id_participants' en lugar de 'id'
+                eventId: id,
+              });
+            }}
+          >
+            <Icon name="edit-2" size={20} color={colors.indigo[500]} />
+        </TouchableOpacity>
+      )}
+
+      {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+          <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteParticipant(item.id_participants)}
         >
           <Icon name="trash-2" size={20} color={colors.gray[400]} />
         </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -149,9 +151,12 @@ export default function ParticipantListScreen() {
         )}
 
         <View style={styles.searchRow}>
-          <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("SendInvitation", { id })}>
-            <Icon name="plus" size={20} color="white" />
-          </TouchableOpacity>
+          {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("SendInvitation", { id })}>
+              <Icon name="plus" size={20} color="white" />
+            </TouchableOpacity>
+          )}
+
 
           <View style={styles.searchContainer}>
             <TextInput
