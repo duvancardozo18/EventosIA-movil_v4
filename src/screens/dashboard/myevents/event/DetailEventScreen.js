@@ -271,7 +271,8 @@ export default function CompleteEventScreen() {
           marginTop={24}
         />
 
-        <Button
+        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+          <Button
           title="Eliminar evento"
           onPress={handleDeleteEvent}
           backgroundColor={colors.red[500]}
@@ -281,7 +282,8 @@ export default function CompleteEventScreen() {
           fontSize={16}
           fontWeight="600"
           marginTop={16}
-        />
+          />
+        )}
       </ScrollView>
 
       <BottomTabBar activeTab="events" />
@@ -302,6 +304,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16, // un poco de margen a los lados
     paddingBottom: 100, // espacio libre debajo de los botones
+    marginBottom: 20,
   },
   loadingText: {
     textAlign: "center",
