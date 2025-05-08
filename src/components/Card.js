@@ -3,21 +3,25 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../styles/colors';
 
 const Card = ({ item, onViewDetails }) => (
-  <TouchableOpacity 
-    style={styles.cardContainer} 
-    onPress={() => onViewDetails && onViewDetails(item)}
-  >
-    <View style={styles.cardContent}>
-      <Text style={styles.itemName}>{item.name}</Text>
-      <View style={styles.quantityContainer}>
-        <Text style={styles.quantityText}>{item.quantity_available} unidades</Text>
-      </View>
-      <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">
-        {item.description || "Equipo en alta definición de la mejor calidad"}
+<TouchableOpacity 
+  style={styles.cardContainer} 
+  onPress={() => onViewDetails && onViewDetails(item)}
+>
+  <View style={styles.cardContent}>
+    <Text style={styles.itemName}>{item.name}</Text>
+    <View style={styles.quantityContainer}>
+      <Text style={styles.quantityText}>
+      <Text style={styles.units}>Unidades: {item.quantity_available}{"\n"}</Text>
+        Valor Unitario: ${item.price}{"\n"}
       </Text>
     </View>
-    <Text style={styles.itemPrice}>$ {item.price ? item.price.toLocaleString() : "0"}</Text>
-  </TouchableOpacity>
+    <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">
+      {item.description || "Sin Descripcion"}
+    </Text>
+  </View>
+  <Text style={styles.itemPrice}>$ {item.price && item.quantity_available ? (item.price * item.quantity_available).toLocaleString() : "0"}</Text>
+</TouchableOpacity>
+
 );
 
 const styles = StyleSheet.create({
