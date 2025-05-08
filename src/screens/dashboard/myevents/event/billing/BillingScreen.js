@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback  } from "react";
 import {
   View,
   Text,
@@ -6,12 +6,15 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "../../../../../styles/colors";
 import { useEvent } from "../../../../../contexts/EventContext";
 import { billingService } from "../../../../../services/api";
+import BottomTabBar from "../../../../../components/BottomTabBar";
+
 
 
 
@@ -37,30 +40,46 @@ const BillingScreen = () => {
       maximumFractionDigits: 0,
     });
 
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await FetchEventPrice(eventId);
-          if (response) setEvent(response);
-    
-          const billingResponse = await billingService.getBillingByEventId(eventId);
-          console.log("Full billing response:", billingResponse); // Para depuración
-          
-          // Accede a billingResponse.data.billings en lugar de billingResponse.billings
-          if (billingResponse?.data?.billings?.length > 0) {
-            setBilling(billingResponse.data.billings[0]);
-          } else {
-            setBilling(null); // Asegúrate de resetear si no hay datos
-          }
-        } catch (error) {
-          console.error("Error:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-    
-      if (eventId) fetchData();
-    }, [eventId]);
+  const fetchData = async () => {
+    try {
+      const response = await FetchEventPrice(eventId);
+      if (response) setEvent(response);
+  
+      const billingResponse = await billingService.getBillingByEventId(eventId);
+      if (billingResponse?.data?.billings?.length > 0) {
+        setBilling(billingResponse.data.billings[0]);
+      } else {
+        setBilling(null);
+      }
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setBilling(null);
+      } else {
+        console.error("Error:", error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Llamada inicial
+  useEffect(() => {
+    if (eventId) {
+      setLoading(true);
+      fetchData();
+    }
+  }, [eventId]);
+  
+  // Refrescar cuando regresa el foco
+  useFocusEffect(
+    useCallback(() => {
+      if (eventId) {
+        setLoading(true);
+        fetchData();
+      }
+    }, [eventId])
+  );
+  
     
     
     
@@ -75,13 +94,15 @@ const BillingScreen = () => {
 
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Facturación</Text>
       </View>
+
+    <ScrollView style={styles.content}>
 
       <View style={styles.eventInfo}>
         <Text style={styles.sectionTitle}>Información del evento</Text>
@@ -209,31 +230,71 @@ const BillingScreen = () => {
           >
             <Text style={styles.linkButtonText}>PAGAR</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => {
+              Alert.alert(
+                "Eliminar Factura",
+                "¿Estás seguro de que deseas eliminar esta factura?",
+                [
+                  { text: "Cancelar", style: "cancel" },
+                  {
+                    text: "Eliminar",
+                    style: "destructive",
+                    onPress: async () => {
+                      setLoading(true);
+                      try {
+                        await billingService.deleteBilling(billing.id_billing);
+                        setBilling(null);
+                        Alert.alert("Eliminado", "La factura ha sido eliminada exitosamente.");
+                      } catch (error) {
+                        console.error("Error al eliminar:", error);
+                        Alert.alert("Error", "No se pudo eliminar la factura.");
+                      } finally {
+                        setLoading(false);
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.deleteButtonText}>ELIMINAR CLIENTE</Text>
+            )}
+          </TouchableOpacity>
+
+
         </View>
-    ) : (
-      <View style={styles.noClientContainer}>
-        <Feather name="user-x" size={60} color={colors.textSecondary} />
-        <Text style={styles.noClientText}>No hay cliente asociado</Text>
-        <Text style={styles.noClientSubtext}>
-          Enlaza un cliente para generar cotizaciones y facturas
-        </Text>
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => navigation.navigate("LinkClient", { eventId: eventId })}
-        >
-          <Text style={styles.linkButtonText}>Enlazar cliente</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.linkButton, { opacity: 0.5 }]}
-          disabled
-        >
-          <Text style={styles.linkButtonText}>PAGAR</Text>
-        </TouchableOpacity>
-      </View>
-    )}
-
-
+        ) : (
+          <View style={styles.noClientContainer}>
+            <Feather name="user-x" size={60} color={colors.textSecondary} />
+            <Text style={styles.noClientText}>No hay cliente asociado</Text>
+            <Text style={styles.noClientSubtext}>
+              Enlaza un cliente para generar cotizaciones y facturas
+            </Text>
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => navigation.navigate("LinkClient", { eventId: eventId })}
+            >
+              <Text style={styles.linkButtonText}>Enlazar cliente</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.linkButton, { opacity: 0.5 }]}
+              disabled
+            >
+              <Text style={styles.linkButtonText}>PAGAR</Text>
+            </TouchableOpacity>
+          </View>
+        )}
     </ScrollView>
+
+
+     <BottomTabBar activeTab="home" />
+    </View>
+    
   );
 };
 
@@ -387,6 +448,20 @@ const styles = StyleSheet.create({
   statePending: {
     color: colors.error,
   },
+  deleteButton: {
+    backgroundColor: colors.red[500],
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  deleteButtonText: {
+    color: colors.white[100],
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  
 });
 
 export default BillingScreen;

@@ -46,16 +46,25 @@ export default function SendInvitationScreen() {
   }
 
   const handleSubmit = async () => {
-    if (!formData.email) {
-      return Alert.alert("Error", "Por favor ingrese un correo electrónico");
+    if (!formData.name.trim()) {
+      return Alert.alert("Campo requerido", "Por favor ingrese el nombre");
+    }
+  
+    if (!formData.last_name.trim()) {
+      return Alert.alert("Campo requerido", "Por favor ingrese el apellido");
+    }
+  
+    if (!formData.email.trim()) {
+      return Alert.alert("Campo requerido", "Por favor ingrese un correo electrónico");
     }
   
     if (!validateEmail(formData.email)) {
-      return Alert.alert("Error", "Por favor ingrese un correo electrónico válido");
+      return Alert.alert("Campo requerido", "Por favor ingrese un correo electrónico válido");
     }
   
     setLoading(true);
     setError("");
+  
   
     try {
       let userId = null;
@@ -137,7 +146,7 @@ export default function SendInvitationScreen() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Enlazar Clinte</Text>
+        <Text style={styles.title}>Enlazar Cliente</Text>
 
         {error ? (
           <View style={styles.errorContainer}>
@@ -152,7 +161,7 @@ export default function SendInvitationScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Nombre"
+              placeholder="Nombre *"
               value={formData.name}
               onChangeText={(value) => handleChange("name", value)}
               editable={!loading}
@@ -165,7 +174,7 @@ export default function SendInvitationScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Apellido"
+              placeholder="Apellido *"
               value={formData.last_name}
               onChangeText={(value) => handleChange("last_name", value)}
               editable={!loading}
@@ -178,7 +187,7 @@ export default function SendInvitationScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Correo electrónico"
+              placeholder="Correo electrónico *"
               keyboardType="email-address"
               autoCapitalize="none"
               value={formData.email}
