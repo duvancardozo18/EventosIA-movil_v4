@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { colors } from '../../../../../styles/colors';
 import ImageBanner from '../../../../../../assets/banner_event.jpg'; 
-import { useNavigation } from '@react-navigation/native'; // <-- Importar navegación
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from "../../../../../contexts/AuthContext";
+
 
 const EventHeader = ({ 
   eventData,
@@ -11,6 +13,7 @@ const EventHeader = ({
   formatTimeRange 
 }) => {
   const navigation = useNavigation(); // <-- Hook de navegación
+  const { user } = useAuth();
 
 
 
@@ -33,16 +36,24 @@ const EventHeader = ({
         style={styles.eventImage}
       />
 
-      {/* Badge presionable */}
+     
       <View style={styles.badgeOverlay}>
-      <TouchableOpacity onPress={() => navigation.navigate('EventStatus', { eventId: eventData.id_event })}>
-        <View style={styles.plannedBadge}>
-          <Text style={styles.badgeText}>{eventData?.state || "Planeado"}</Text>
-          <Icon name="edit-2" size={20} color={colors.indigo[500]} />
-        </View>
-      </TouchableOpacity>
-
+          {(user?.role === "SuperAdmin" || user?.role === "EventManager") ? (
+            <TouchableOpacity onPress={() => navigation.navigate('EventStatus', { eventId: eventData.id_event })}>
+              <View style={styles.plannedBadge}>
+              <Text style={styles.badgeText}>{eventData?.state || "Planeado"}</Text>
+              <Icon name="edit-2" size={20} color={colors.indigo[500]} />
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.plannedBadge}>
+              <Text style={styles.badgeText}>
+                {eventData?.state || "Planeado"}{" "}
+              </Text>
+            </View>
+          )}
       </View>
+
 
       <View style={styles.headerContent}>
         <View style={styles.headerTextContainer}>

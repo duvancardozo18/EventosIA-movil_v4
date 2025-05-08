@@ -16,6 +16,8 @@ import EventDescription from './detaileventsection/EventDescription';
 import TabSection from "./detaileventsection/TabSection";
 import Button from "../../../../components/Button";
 import EditEventButton from "../../../../components/EditEventButton";
+import { useAuth } from "../../../../contexts/AuthContext";
+
 
 export default function CompleteEventScreen() {
   const navigation = useNavigation();
@@ -48,7 +50,8 @@ export default function CompleteEventScreen() {
   const [loadingFoods, setLoadingFoods] = useState(false)
   const [loadingParticipants, setLoadingParticipants] = useState(false)
 
-  const isFocused = useIsFocused();
+  const isFocused = useIsFocused();  
+  const { user } = useAuth();
 
 
   // Usar useFocusEffect para recargar los datos cada vez que la pantalla obtiene el foco
@@ -229,8 +232,9 @@ export default function CompleteEventScreen() {
           formatTimeRange={formatTimeRange}
         />
 
-        {/* Botón de Editar Evento - Ahora usando el componente EditButton */}
-        <EditEventButton onPress={handleEditEvent} />
+        {(user?.role === "SuperAdmin" || user?.role === "EventManager") && (
+          <EditEventButton onPress={handleEditEvent} />
+        )}
 
         {/* Descripción del evento */}
         <EventDescription description={eventData?.event_type_description} />
