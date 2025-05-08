@@ -99,7 +99,7 @@ const AddResourceScreen = () => {
       {/* Botón de regreso */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={24} color={colors.gray[800]} />
+          <Feather name="arrow-left"  marginTop={34} size={24} color={colors.gray[800]} />
         </TouchableOpacity>
       </View>
 
