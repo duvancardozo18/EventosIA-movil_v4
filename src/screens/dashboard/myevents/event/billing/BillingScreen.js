@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "../../../../../styles/colors";
 import { useEvent } from "../../../../../contexts/EventContext";
@@ -34,6 +34,7 @@ const BillingScreen = () => {
   const [loading, setLoading] = useState(true);
   const { eventId } = route.params || {};
   const { user } = useAuth();
+  const isFocused = useIsFocused();
 
 
  
@@ -46,10 +47,14 @@ const BillingScreen = () => {
 
   const fetchData = async () => {
     try {
-      const response = await FetchEventPrice(eventId);
-      if (response) setEvent(response);
+      setLoading(true);
+      const [eventResponse, billingResponse] = await Promise.all([
+        FetchEventPrice(eventId),
+        billingService.getBillingByEventId(eventId)
+      ]);
   
-      const billingResponse = await billingService.getBillingByEventId(eventId);
+      setEvent(eventResponse || null);
+      
       if (billingResponse?.data?.billings?.length > 0) {
         setBilling(billingResponse.data.billings[0]);
       } else {
@@ -60,31 +65,28 @@ const BillingScreen = () => {
         setBilling(null);
       } else {
         console.error("Error:", error);
+        Alert.alert("Error", "No se pudieron cargar los datos");
       }
     } finally {
       setLoading(false);
     }
   };
   
-  // Llamada inicial
-  useEffect(() => {
-    if (eventId) {
-      setLoading(true);
-      fetchData();
-    }
-  }, [eventId]);
-  
-  // Refrescar cuando regresa el foco
+  //Recargar al mostrar vista
   useFocusEffect(
     useCallback(() => {
-      if (eventId) {
+      const loadData = async () => {
         setLoading(true);
-        fetchData();
+        await fetchData();
+        setLoading(false);
+      };
+      
+      if (eventId) {
+        loadData();
       }
     }, [eventId])
   );
-  
-    
+      
     
     
 
@@ -241,8 +243,8 @@ const BillingScreen = () => {
             style={styles.deleteButton}
             onPress={() => {
               Alert.alert(
-                "Eliminar Factura",
-                "¿Estás seguro de que deseas eliminar esta factura?",
+                "Eliminar Cliente",
+                "¿Estás seguro de que deseas eliminar el cliente?",
                 [
                   { text: "Cancelar", style: "cancel" },
                   {

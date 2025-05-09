@@ -9,12 +9,9 @@ const QuoteSentScreen = () => {
   const { eventId } = route.params
 
   const handleViewEvent = () => {
-    navigation.navigate("EventDetailScreen", { eventId })
+    navigation.navigate("Billing", { eventId: eventId });
   }
 
-  const handleBackToDashboard = () => {
-    navigation.navigate("DashboardScreen")
-  }
 
   return (
     <View style={styles.container}>
@@ -23,7 +20,7 @@ const QuoteSentScreen = () => {
           <Feather name="check-circle" size={80} color={colors.success} />
         </View>
 
-        <Text style={styles.title}>¡Cotización Enviada!</Text>
+        <Text style={styles.title}>¡Cliente Enlazado!</Text>
 
         <Text style={styles.message}>
           La cotización ha sido enviada exitosamente al cliente. Recibirán un correo electrónico con los detalles del
@@ -32,11 +29,7 @@ const QuoteSentScreen = () => {
 
         <View style={styles.buttonsContainer}>
           <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleViewEvent}>
-            <Text style={styles.primaryButtonText}>Ver Evento</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleBackToDashboard}>
-            <Text style={styles.secondaryButtonText}>Volver al Dashboard</Text>
+            <Text style={styles.primaryButtonText}>Aceptar</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -160,9 +160,7 @@ const [lastNameError, setLastNameError] = useState("");
       };
       await notificationService.createNotification(notificationPayload);
   
-      Alert.alert("Éxito", "Cotización enviada correctamente", [
-        { text: "OK", onPress: () => navigation.navigate("Billing", { id: eventId }) },
-      ]);
+      navigation.navigate("QuoteSent", { eventId: eventId });
     } catch (err) {
       console.error("Error en el proceso:", err);
       const errorMessage = err.message || "Hubo un problema al procesar la solicitud";
