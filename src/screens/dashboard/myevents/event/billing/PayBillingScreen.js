@@ -44,9 +44,9 @@ export default function PayBillingScreen() {
     setSelectedPaymentMethod(method);
   };
 
-  const handlePayBilling = () => {
+  const handlePayBilling = async () => {
     let isValid = true;
-
+  
     if (selectedPaymentMethod === 'cards') {
       if (!validateCardNumber(cardNumber)) {
         isValid = false;
@@ -69,11 +69,21 @@ export default function PayBillingScreen() {
         alert('Número de Nequi inválido');
       }
     }
-
+  
     if (isValid) {
-      navigation.navigate('BillPaid');
+      try {
+        await billingService.updateBilling(eventId, {
+          method: selectedPaymentMethod,
+          status: 'paid'
+        });
+        navigation.navigate('BillPaid');
+      } catch (error) {
+        console.error('Error al actualizar facturación:', error);
+        Alert.alert('Error', 'No se pudo completar el pago. Intenta nuevamente.');
+      }
     }
   };
+  
 
   const detectCardType = (number) => {
     const cardNum = number.replace(/\s/g, '');
@@ -113,7 +123,28 @@ export default function PayBillingScreen() {
   };
 
   const validateCardNumber = (number) => /^\d{16}$/.test(number.replace(/\s/g, ''));
-  const validateExpiryDate = (expiry) => /^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry);
+  const validateExpiryDate = (expiry) => {
+    const regex = /^(0[1-9]|1[0-2])\/(\d{2})$/;
+    const match = expiry.match(regex);
+    if (!match) return false;
+  
+    const month = parseInt(match[1], 10);
+    const year = parseInt(match[2], 10);
+  
+    // Convertimos YY a YYYY
+    const fullYear = 2000 + year;
+    if (fullYear < 2025 || fullYear > 2030) return false;
+  
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+  
+    // Validar que no esté en el pasado
+    if (fullYear === currentYear && month < currentMonth) return false;
+  
+    return true;
+  };
+  
   const validateCVV = (cvv) => /^\d{3,4}$/.test(cvv);
   const validatePaypalEmail = (email) => /^[\w.-]+@[\w.-]+\.\w{2,6}$/.test(email);
   const validateNequiNumber = (number) => /^\d{10}$/.test(number);

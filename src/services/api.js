@@ -193,7 +193,7 @@ export const invitationService = {
 export const billingService = {
   getBillingByEventId: (eventId) => api.get(`/billing/${eventId}`),
   createBilling: (data) => api.post('/billing', data),
-  updateBilling: (id, data) => api.put(`/billing/${id}`, data),
+  updateBilling: (id, data) => api.put(`/billing/pay/${id}`, data),
   deleteBilling: (id) => api.delete(`/billing/${id}`),
 }
 

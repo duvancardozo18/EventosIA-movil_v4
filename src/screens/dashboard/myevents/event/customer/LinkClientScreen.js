@@ -25,6 +25,8 @@ export default function SendInvitationScreen() {
   const { eventId: eventId } = route.params
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [nameError, setNameError] = useState("");
+const [lastNameError, setLastNameError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     last_name: "",
@@ -32,13 +34,48 @@ export default function SendInvitationScreen() {
   })
   const { user } = useAuth()
   const { getEventById } = eventService;
+  const [emailError, setEmailError] = useState("")
 
   const handleChange = (name, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
+    if (name === "name") {
+      const regex = /^[A-Za-z\s]+$/; // Permite letras y espacios
+      if (regex.test(value) || value === "") {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+        }));
+        setNameError(""); // Limpia el error del campo "name"
+      } else {
+        setNameError("Solo se permiten letras");
+      }
+    } else if (name === "last_name") {
+      const regex = /^[A-Za-z\s]+$/; // Permite letras y espacios
+      if (regex.test(value) || value === "") {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+        }));
+        setLastNameError(""); // Limpia el error del campo "last_name"
+      } else {
+        setLastNameError("Solo se permiten letras");
+      }
+    } else {
+      // Actualizar otros campos sin validación adicional
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  
+    // Validación en tiempo real del correo electrónico
+    if (name === "email") {
+      if (!validateEmail(value)) {
+        setEmailError("Por favor ingrese un correo electrónico válido");
+      } else {
+        setEmailError("");
+      }
+    }
+  };
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -147,53 +184,66 @@ export default function SendInvitationScreen() {
 
       <View style={styles.content}>
         <Text style={styles.title}>Enlazar Cliente</Text>
-
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <View style={styles.inputIconContainer}>
-              <Icon name="user" size={20} color={colors.gray[400]} />
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputIconContainer}>
+                <Icon name="user" size={20} color={colors.gray[400]} />
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre *"
+                value={formData.name}
+                onChangeText={(value) => handleChange('name', value)}
+                editable={!loading}
+                maxLength={20}
+              />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre *"
-              value={formData.name}
-              onChangeText={(value) => handleChange("name", value)}
-              editable={!loading}
-            />
+            {nameError ? (
+                 <Text style={styles.errorText}>{nameError}</Text>
+              ) : null}
           </View>
 
           <View style={styles.inputContainer}>
-            <View style={styles.inputIconContainer}>
-              <Icon name="user" size={20} color={colors.gray[400]} />
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputIconContainer}>
+                <Icon name="user" size={20} color={colors.gray[400]} />
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Apellido *"
+                value={formData.last_name}
+                onChangeText={(value) => handleChange('last_name', value)}
+                editable={!loading}
+                maxLength={20}
+              />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Apellido *"
-              value={formData.last_name}
-              onChangeText={(value) => handleChange("last_name", value)}
-              editable={!loading}
-            />
+            {lastNameError ? (
+                 <Text style={styles.errorText}>{lastNameError}</Text>
+              ) : null}
           </View>
 
+        
+
           <View style={styles.inputContainer}>
-            <View style={styles.inputIconContainer}>
-              <Icon name="mail" size={20} color={colors.gray[400]} />
+            <View style={styles.inputWrapper}>
+                <View style={styles.inputIconContainer}>
+                  <Icon name="mail" size={20} color={colors.gray[400]} />
+                </View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Correo electrónico *"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={formData.email}
+                  onChangeText={(value) => handleChange("email", value)}
+                  editable={!loading}
+                  maxLength={35}
+                />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Correo electrónico *"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={formData.email}
-              onChangeText={(value) => handleChange("email", value)}
-              editable={!loading}
-            />
+            {emailError ? (
+              <Text style={styles.errorText}>{emailError}</Text>
+            ) : null}
           </View>
 
           <TouchableOpacity 
@@ -232,6 +282,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   errorContainer: {
+    height: 20, // Esto asegura que el error no haga que el layout cambie
     backgroundColor: colors.red[100],
     borderWidth: 1,
     borderColor: colors.red[400],

@@ -253,7 +253,7 @@ const BillingScreen = () => {
                       try {
                         await billingService.deleteBilling(billing.id_billing);
                         setBilling(null);
-                        Alert.alert("Eliminado", "La factura ha sido eliminada exitosamente.");
+                        Alert.alert("Eliminado", "El cliente ha sido eliminado exitosamente.");
                       } catch (error) {
                         console.error("Error al eliminar:", error);
                         Alert.alert("Error", "No se pudo eliminar la factura.");
@@ -290,7 +290,7 @@ const BillingScreen = () => {
               style={styles.linkButton}
               onPress={() => navigation.navigate("LinkClient", { eventId: eventId })}
             >
-              <Text style={styles.linkButtonText}>Enlazar cliente</Text>
+              <Text style={styles.linkButtonText}>Enlazar Cliente</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.linkButton, { opacity: 0.5 }]}
