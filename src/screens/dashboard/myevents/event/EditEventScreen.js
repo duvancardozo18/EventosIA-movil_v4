@@ -296,11 +296,39 @@ const handleSubmit = async () => {
       );
       return;
     }
-  
+
+    if (currentStep === 1 && !formData.categories_id) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor seleccione una categoría",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (currentStep === 2 && !formData.event_modality) {
       Alert.alert(
         "Campo requerido",
         "Por favor seleccione el tipo de evento",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (currentStep === 2 && !formData.max_participants) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese el numero máximo de participantes",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+
+    if (currentStep === 2 && !formData.price_event) {
+      Alert.alert(
+        "Campo requerido",
+        "Por favor ingrese el precio del evento",
         [{ text: "OK" }]
       );
       return;
@@ -314,6 +342,16 @@ const handleSubmit = async () => {
       );
       return;
     }
+
+    if (currentStep === 2 && formData.start_time >= formData.end_time) {
+      Alert.alert(
+        "Fecha inválida",
+        "La fecha de finalización no puede ser anterior o igual a la fecha de inicio",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
   
     setCurrentStep(currentStep + 1);
   };
@@ -331,6 +369,7 @@ const handleSubmit = async () => {
           value={formData.name}
           onChangeText={(value) => handleChange("name", value)}
           placeholder="Nombre del evento"
+          maxLength={50}
         />
       </View>
 
@@ -343,11 +382,12 @@ const handleSubmit = async () => {
           placeholder="Descripción del evento"
           multiline
           numberOfLines={4}
+          maxLength={220}
         />
       </View>
 
     <View style={styles.formGroup}>
-      <Text style={styles.label}>Categoria <Text style={{ color: 'red' }}>*</Text></Text>
+      <Text style={styles.label}>Categoria *<Text style={{ color: 'red' }}>*</Text></Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.categories_id}
@@ -404,12 +444,13 @@ const handleSubmit = async () => {
               value={formData.video_conference_link}
               onChangeText={(value) => handleChange("video_conference_link", value)}
               placeholder="Enlace de videoconferencia"
+              maxLength={100}
             />
         </View>
     )}
 
     <View style={styles.dateTimeRow}>
-      <Text style={styles.dateTimeLabel}>Inicio</Text>
+      <Text style={styles.dateTimeLabel}>Inicio *</Text>
       <TouchableOpacity 
         style={styles.dateInput} 
         onPress={() => setShowStartDate(true)}
@@ -433,7 +474,7 @@ const handleSubmit = async () => {
     </View>
 
     <View style={styles.dateTimeRow}>
-      <Text style={styles.dateTimeLabel}>Fin</Text>
+      <Text style={styles.dateTimeLabel}>Fin *</Text>
       <TouchableOpacity 
         style={styles.dateInput} 
         onPress={() => setShowEndDate(true)}
@@ -490,13 +531,15 @@ const handleSubmit = async () => {
     </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Número máximo de participantes</Text>
+        <Text style={styles.label}>Número máximo de participantes *</Text>
         <TextInput
           style={styles.input}
           value={formData.max_participants}
           onChangeText={(value) => handleChange("max_participants", value)}
           placeholder="Número máximo de participantes"
           keyboardType="numeric"
+          maxLength={8}
+
         />
       </View>
 
@@ -508,6 +551,7 @@ const handleSubmit = async () => {
           onChangeText={(value) => handleChange("price_event", value)}
           placeholder="Precio del evento"
           keyboardType="numeric"
+          maxLength={10}
         />
       </View>
     </>
@@ -522,6 +566,7 @@ const handleSubmit = async () => {
           value={formData.location_name}
           onChangeText={(value) => handleChange("location_name", value)}
           placeholder="Nombre del lugar o establecimiento"
+          maxLength={50}
         />
       </View>
 
@@ -532,6 +577,7 @@ const handleSubmit = async () => {
           value={formData.location_address}
           onChangeText={(value) => handleChange("location_address", value)}
           placeholder="Dirección completa"
+          maxLength={50}
         />
       </View>
 
@@ -544,6 +590,7 @@ const handleSubmit = async () => {
           placeholder="Descripción del lugar (características, instalaciones, etc.)"
           multiline
           numberOfLines={4}
+          maxLength={220}
         />
       </View>
 
@@ -555,6 +602,7 @@ const handleSubmit = async () => {
           onChangeText={(value) => handleChange("location_rental_price", value)}
           placeholder="Precio en COP"
           keyboardType="numeric"
+          maxLength={10}
         />
       </View>
     </>

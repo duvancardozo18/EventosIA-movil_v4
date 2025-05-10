@@ -430,6 +430,7 @@ export default function CreateEventScreen() {
               value={formData.video_conference_link}
               onChangeText={(value) => handleChange("video_conference_link", value)}
               placeholder="Enlace de videoconferencia"
+              maxLength={100}
             />
         </View>
     )}
