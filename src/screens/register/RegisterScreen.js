@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native"
 import { Feather } from '@expo/vector-icons'
 import { userService } from "../../services/api"
 import { colors } from "../../styles/colors"
+import { Modal } from "react-native"
 
 export default function RegisterScreen() {
   const navigation = useNavigation()
@@ -35,6 +36,10 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [formSubmitted, setFormSubmitted] = useState(false)
+
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+
   
   // Estados para errores por campo
   const [errors, setErrors] = useState({
@@ -166,6 +171,12 @@ export default function RegisterScreen() {
       return
     }
 
+    if (!termsAccepted) {
+      setError("Debes aceptar los términos y condiciones para continuar")
+      return
+    }
+
+
     try {
       setLoading(true)
       setError(null)
@@ -197,6 +208,7 @@ export default function RegisterScreen() {
   }
 
   return (
+    <>
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
@@ -326,6 +338,35 @@ export default function RegisterScreen() {
             ) : null}
           </View>
 
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+            <TouchableOpacity
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              style={{
+                width: 20,
+                height: 20,
+                borderWidth: 1,
+                borderColor: colors.gray[400],
+                borderRadius: 4,
+                backgroundColor: termsAccepted ? colors.indigo[500] : "white",
+                marginRight: 8,
+                justifyContent: "center",
+                alignItems: "center"
+              }}
+            >
+              {termsAccepted && <Feather name="check" size={14} color="white" />}
+            </TouchableOpacity>
+            <Text style={{ flex: 1, fontSize: 14, color: colors.gray[600] }}>
+              Acepto los{" "}
+              <Text 
+                style={{ color: colors.indigo[600], textDecorationLine: "underline" }}
+                onPress={() => setShowTermsModal(true)}
+              >
+                Términos y condiciones
+              </Text>
+            </Text>
+          </View>
+
+
           <TouchableOpacity 
             style={[styles.registerButton, loading && styles.disabledButton]} 
             onPress={handleSubmit} 
@@ -334,10 +375,10 @@ export default function RegisterScreen() {
             {loading ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
-              <>
-                <Text style={styles.registerButtonText}>CREAR CUENTA</Text>
-                <Feather name="arrow-right" size={20} color="white" style={styles.buttonIcon} />
-              </>
+             <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.registerButtonText}>CREAR CUENTA</Text>
+              <Feather name="arrow-right" size={20} color="white" style={styles.buttonIcon} />
+            </View>
             )}
           </TouchableOpacity>
         </View>
@@ -355,8 +396,71 @@ export default function RegisterScreen() {
         </View>
       </ScrollView>
     </TouchableWithoutFeedback>
+
+      <Modal
+        visible={showTermsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTermsModal(false)}
+      >
+      <View style={modalStyles.backdrop}>
+        <View style={modalStyles.container}>
+          <Text style={modalStyles.title}>Términos y Condiciones de Uso</Text>
+          
+          <ScrollView style={modalStyles.body}>
+            <Text style={modalStyles.text}>
+              Al registrarte en nuestra plataforma:
+              {"\n\n"}
+              • Aceptas nuestros Términos y Condiciones
+              {"\n"}
+              • Autorizas el tratamiento de tus datos personales conforme a la Ley de Protección de Datos (Habeas Data)
+              {"\n"}
+              • Confirmas que has leído y comprendido nuestras políticas de privacidad
+              {"\n\n"}
+              Tus datos serán utilizados únicamente para los fines descritos en nuestras políticas y podrás ejercer tus derechos de acceso, rectificación y cancelación en cualquier momento.
+            </Text>
+          </ScrollView>
+
+          <TouchableOpacity
+            onPress={() => setShowTermsModal(false)}
+            style={modalStyles.closeButton}
+            activeOpacity={0.7}
+          >
+            <Text style={modalStyles.closeButtonText}>Entendido</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      </Modal>
+    </>
+    
   )
 }
+
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  container: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 20,
+  },
+  title: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  body: { maxHeight: 300 },
+  text: { fontSize: 14, color: colors.gray[700] },
+  closeButton: {
+    marginTop: 20,
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: colors.indigo[500],
+    borderRadius: 4,
+  },
+  closeButtonText: { color: 'white' },
+})
 
 const styles = StyleSheet.create({
   container: {
