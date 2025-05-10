@@ -10,6 +10,7 @@ import DateTimePicker from "@react-native-community/datetimepicker"
 import { useEvent } from "../../../../contexts/EventContext"
 import { useLocation } from "../../../../contexts/LocationContext"
 import { useEventType } from "../../../../contexts/EventTypeContext"
+import { useCategory } from "../../../../contexts/CategoryContext"
 import { useAuth } from "../../../../contexts/AuthContext"
 import { colors } from "../../../../styles/colors"
 import { Alert } from 'react-native'
@@ -21,6 +22,7 @@ export default function EditEventScreen() {
   const { fetchEvent, updateEvent, loading, error } = useEvent()
   const { updateEventType } = useEventType()
   const { updateLocation } = useLocation()
+  const { categories, getCategories } = useCategory()
   const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
   const userId = user?.id_user
@@ -33,10 +35,12 @@ export default function EditEventScreen() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    event_state_id: 1,
+    event_state_id: "",
+    id_category:"",
     event_modality: "",
     user_id_created_by: userId || "",
     image: null,
+    image_url: null, 
     video_conference_link: "",
     max_participants: "",
     price_event: "",
@@ -58,6 +62,8 @@ useEffect(() => {
   const fetchEventData = async () => {
     try {
       const event = await fetchEvent(event_id);
+      // Cargar categorías
+      await getCategories()
 
       if (event) {
         setEventData(event);
@@ -66,13 +72,11 @@ useEffect(() => {
         setFormData({
           name: event.event_name || "",
           description: event.event_type_description || "",
+          image_url: event.image_url?.[0] || null,
           event_state_id: event.id_event_state || 1,
           event_modality: event.event_type || "",
+          categories_id: event.id_category || "",
           user_id_created_by: event.user_id_created_by || "",
-          // Guarda la URL de la imagen para referencia
-          image_url: event.image_url || null,
-          // La imagen seleccionada debe ser null inicialmente
-          image: null,
           video_conference_link: event.video_conference_link || "",
           max_participants: event.max_participants?.toString() || "",
           price_event: event.event_price?.toString() || "",
@@ -224,6 +228,7 @@ const handleSubmit = async () => {
       end_time: formData.end_time || "",
       video_conference_link: formData.video_conference_link || "",
       price: formData.price_event || "",
+      category_id: formData.categories_id || "",
       max_participants: formData.max_participants || 0
     });
 
@@ -264,9 +269,10 @@ const handleSubmit = async () => {
         type
       });
     } else if (formData.image_url) {
-      // Si no hay nueva imagen, opcionalmente puedes enviar la URL existente si tu backend lo necesita
       eventFormData.append("image_url", formData.image_url);
     }
+
+
 
    
     // 4. Actualizar el evento
@@ -338,6 +344,25 @@ const handleSubmit = async () => {
           multiline
           numberOfLines={4}
         />
+      </View>
+
+    <View style={styles.formGroup}>
+      <Text style={styles.label}>Categoria <Text style={{ color: 'red' }}>*</Text></Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.categories_id}
+            onValueChange={(value) => handleChange("categories_id", value)}
+            style={styles.picker}
+          >
+            {categories.map((category) => (
+              <Picker.Item 
+                key={category.id_category} 
+                label={category.name} 
+                value={category.id_category} 
+              />
+            ))}
+          </Picker>
+        </View>
       </View>
 
       <View style={styles.formGroup}>

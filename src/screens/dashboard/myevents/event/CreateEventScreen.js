@@ -355,6 +355,7 @@ export default function CreateEventScreen() {
           value={formData.name}
           onChangeText={(value) => handleChange("name", value)}
           placeholder="Nombre del evento"
+          maxLength={50}
         />
       </View>
 
@@ -367,6 +368,7 @@ export default function CreateEventScreen() {
           placeholder="Descripción del evento"
           multiline
           numberOfLines={4}
+          maxLength={220}
         />
       </View>
 
@@ -523,6 +525,7 @@ export default function CreateEventScreen() {
           onChangeText={(value) => handleChange("max_participants", value)}
           placeholder="Número máximo de participantes"
           keyboardType="numeric"
+          maxLength={8}
         />
       </View>
 
@@ -536,6 +539,7 @@ export default function CreateEventScreen() {
           onChangeText={(value) => handleChange("price_event", value)}
           placeholder="Precio del evento"
           keyboardType="numeric"
+          maxLength={10}
         />
       </View>
 
@@ -552,6 +556,7 @@ export default function CreateEventScreen() {
           value={formData.location_name}
           onChangeText={(value) => handleChange("location_name", value)}
           placeholder="Nombre del lugar o establecimiento"
+          maxLength={50}
         />
       </View>
 
@@ -562,6 +567,7 @@ export default function CreateEventScreen() {
           value={formData.location_address}
           onChangeText={(value) => handleChange("location_address", value)}
           placeholder="Dirección completa"
+          maxLength={50}
         />
       </View>
 
@@ -574,6 +580,7 @@ export default function CreateEventScreen() {
           placeholder="Descripción del lugar (características, instalaciones, etc.)"
           multiline
           numberOfLines={4}
+          maxLength={220}
         />
       </View>
 
@@ -585,6 +592,7 @@ export default function CreateEventScreen() {
           onChangeText={(value) => handleChange("location_rental_price", value)}
           placeholder="Precio en COP"
           keyboardType="numeric"
+          maxLength={10}
         />
       </View>
 
