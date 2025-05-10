@@ -47,14 +47,10 @@ const BillingScreen = () => {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      const [eventResponse, billingResponse] = await Promise.all([
-        FetchEventPrice(eventId),
-        billingService.getBillingByEventId(eventId)
-      ]);
+      const response = await FetchEventPrice(eventId);
+      if (response) setEvent(response);
   
-      setEvent(eventResponse || null);
-      
+      const billingResponse = await billingService.getBillingByEventId(eventId);
       if (billingResponse?.data?.billings?.length > 0) {
         setBilling(billingResponse.data.billings[0]);
       } else {
@@ -65,7 +61,6 @@ const BillingScreen = () => {
         setBilling(null);
       } else {
         console.error("Error:", error);
-        Alert.alert("Error", "No se pudieron cargar los datos");
       }
     } finally {
       setLoading(false);
