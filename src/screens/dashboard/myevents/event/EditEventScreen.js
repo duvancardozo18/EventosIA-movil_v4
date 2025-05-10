@@ -17,7 +17,7 @@ import { Alert } from 'react-native'
 export default function EditEventScreen() {
   const navigation = useNavigation()
   const route = useRoute()
-  const { event_id } = route.params // Recibimos el ID del evento como event_id
+  const { event_id } = route.params 
   const { fetchEvent, updateEvent, loading, error } = useEvent()
   const { updateEventType } = useEventType()
   const { updateLocation } = useLocation()
@@ -54,9 +54,6 @@ export default function EditEventScreen() {
   const [showEndDate, setShowEndDate] = useState(false)
   const [showEndTime, setShowEndTime] = useState(false)
 
-  // Función para cargar los datos del evento
-
-// En tu useEffect, hay un problema con cómo estás manejando la imagen
 useEffect(() => {
   const fetchEventData = async () => {
     try {
@@ -120,30 +117,7 @@ useEffect(() => {
     }))
   }
 
-  // const pickImage = async () => {
-  //   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
 
-  //   if (status !== "granted") {
-  //     alert("Se necesitan permisos para acceder a la galería")
-  //     return
-  //   }
-
-  //   const result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  //     allowsEditing: true,
-  //     aspect: [4, 3],
-  //     quality: 1,
-  //   })
-
-  //   if (!result.cancelled && result.assets && result.assets.length > 0) {
-  //     const selectedImage = result.assets[0]
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       image: selectedImage,
-  //     }))
-  //     setImagePreview(selectedImage.uri)
-  //   }
-  // }
 
   const handleDateChange = (event, selectedDate, type) => {
     if (selectedDate) {
@@ -223,7 +197,6 @@ const pickImage = async () => {
   }
 }
 
-// Versión corregida de handleSubmit que maneja la imagen correctamente
 const handleSubmit = async () => {
   try {
     // Validaciones
@@ -279,46 +252,29 @@ const handleSubmit = async () => {
     eventFormData.append('event_state_id', String(formData.event_state_id));
     eventFormData.append('user_id_created_by', String(userId));
     
-    // SOLUCIÓN CLAVE: Manejo de imágenes
-    // Si el usuario seleccionó una nueva imagen, la usamos
-    if (formData.image && formData.image.uri) {
-      console.log("Enviando nueva imagen:", formData.image.uri);
-      eventFormData.append('image', {
-        uri: formData.image.uri,
-        type: formData.image.type || 'image/jpeg',
-        name: formData.image.fileName || `event_${Date.now()}.jpg`
-      });
-      
-      // Es importante NO enviar keep_image=true cuando hay una nueva imagen
-      // Algunos backends podrían confundirse si reciben ambos
-    } 
-    else if (formData.image_url) {
-      // Si no hay nueva imagen pero existe una URL previa, indicamos que debe conservarse
-      console.log("Manteniendo imagen existente:", formData.image_url);
-      
-      // Este es un campo clave que le dice al backend que conserve la imagen
-      eventFormData.append('keep_image', 'true');
-      
-      // Es posible que tu backend necesite recibir también la URL de la imagen
-      // para saber cuál conservar
-      if (Array.isArray(formData.image_url)) {
-        eventFormData.append('image_url', formData.image_url[0]);
-      } else {
-        eventFormData.append('image_url', formData.image_url);
-      }
-    }
-    
-    // Opcional: ver qué estamos enviando al backend
-    console.log("FormData a enviar:", JSON.stringify([...eventFormData._parts]));
+    if (formData.image) {
+      const localUri = formData.image.uri;
+      const filename = localUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image`;
 
+      eventFormData.append("image", {
+        uri: localUri,
+        name: filename,
+        type
+      });
+    } else if (formData.image_url) {
+      // Si no hay nueva imagen, opcionalmente puedes enviar la URL existente si tu backend lo necesita
+      eventFormData.append("image_url", formData.image_url);
+    }
+
+   
     // 4. Actualizar el evento
     const success = await updateEvent(event_id, eventFormData);
     
     if (success) {
-      navigation.replace("EventEdited", { event_id });
-    } else {
-      throw new Error("Error al actualizar el evento");
-    }
+      navigation.replace("EventDetail", { event_id });
+    } 
   } catch (error) {
     console.error("Error completo:", error);
     alert(`Error: ${error.message}`);
@@ -408,7 +364,6 @@ const handleSubmit = async () => {
                 onValueChange={(value) => handleChange("event_modality", value)}
                 style={styles.picker}
             >
-                <Picker.Item label="Seleccionar tipo de evento" value="" />
                 <Picker.Item label="Virtual" value="virtual" />
                 <Picker.Item label="Presencial" value="presencial" />
                 <Picker.Item label="Híbrido" value="hibrido" />
