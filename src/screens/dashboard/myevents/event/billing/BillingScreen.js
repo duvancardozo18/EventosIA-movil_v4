@@ -231,7 +231,7 @@ const BillingScreen = () => {
           <TouchableOpacity
             style={styles.linkButton}
             onPress={() => {
-              navigation.navigate("BillingPayment", { eventId: billing.event_id });
+              navigation.navigate("BillingPayment", { eventId });
             }}
           >
             <Text style={styles.linkButtonText}>PAGAR</Text>

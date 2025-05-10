@@ -72,11 +72,11 @@ export default function PayBillingScreen() {
   
     if (isValid) {
       try {
-        await billingService.updateBilling(eventId, {
+        await billingService.updateBilling(billingData?.id_billing, {
           method: selectedPaymentMethod,
           status: 'paid'
         });
-        navigation.navigate('BillPaid');
+        navigation.navigate('BillPaid', { eventId: billingData?.event_id });
       } catch (error) {
         console.error('Error al actualizar facturación:', error);
         Alert.alert('Error', 'No se pudo completar el pago. Intenta nuevamente.');

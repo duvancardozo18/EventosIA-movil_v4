@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
 import { colors } from "../../../../../styles/colors";
 
@@ -7,6 +7,9 @@ import React from 'react'
 
 export default function BillPaidScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { eventId } = route.params;
+
   
     return (
       <View style={styles.container}>
@@ -27,7 +30,9 @@ export default function BillPaidScreen() {
   
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate("Dashboard")}
+              onPress={() => {
+              navigation.navigate("Billing", { eventId });
+            }}
           >
             <Text style={styles.buttonText}>ACEPTAR</Text>
           </TouchableOpacity>
